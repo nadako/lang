@@ -1,0 +1,4 @@
+-cp src
+-main toylang.Main
+-lib hxparse
+-neko main.n
