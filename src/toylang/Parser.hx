@@ -144,7 +144,12 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
             case [{kind: TkParenOpen}]:
                 switch stream {
                     case [{kind: TkParenClose}]:
-                        TTuple([]);
+                        switch stream {
+                            case [{kind: TkArrow}, ret = parseSyntaxType()]:
+                                TFunction([], ret);
+                            case _:
+                                TTuple([]);
+                        }
                     case [t = parseSyntaxType()]:
                         switch stream {
                             case [{kind: TkComma}]:

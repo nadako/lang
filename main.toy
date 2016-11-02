@@ -1,3 +1,3 @@
-function main(b):Void {
-    var v = if (b) ("hello", true) else if (monoFun(1)) ("bye", false) else ("", monoFun(5));
+function main():Void {
+    var a:()=>Int;
 }
