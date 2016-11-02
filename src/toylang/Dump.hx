@@ -114,7 +114,7 @@ class Dump {
             case TInst(c):
                 'TInst(${dumpPath(c.module, c.name)})';
             case TFun(args,ret):
-                var args = [for (a in args) a.name + " : " + dumpType(a.type)].join(", ");
+                var args = [for (a in args) (if (a.name != "") a.name + " : "  else "") + dumpType(a.type)].join(", ");
                 'TFun(($args) => ${dumpType(ret)})';
             case TMono(m):
                 if (m.type == null)

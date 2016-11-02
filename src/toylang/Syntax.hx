@@ -67,7 +67,11 @@ class FunctionDecl {
 class FunctionArg {
     public var name:String;
     public var type:Null<SyntaxType>;
-    public function new() {}
+
+    public function new(name, type) {
+        this.name = name;
+        this.type = type;
+    }
 }
 
 class ClassDecl {

@@ -109,10 +109,7 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
     function parseFunctionArg():FunctionArg {
         return switch stream {
             case [{kind: TkIdent(name)}, type = parseOptional(parseTypeHint)]:
-                var arg = new FunctionArg();
-                arg.name = name;
-                arg.type = type;
-                arg;
+                new FunctionArg(name, type);
         }
     }
 
@@ -152,13 +149,30 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                         }
                     case [t = parseSyntaxType()]:
                         switch stream {
+                            case [{kind: TkParenClose}]:
+                                switch stream {
+                                    case [{kind: TkArrow}, ret = parseSyntaxType()]:
+                                        TFunction([new FunctionArg("", t)], ret);
+                                    case _:
+                                        unexpected();
+                                }
+
                             case [{kind: TkComma}]:
                                 switch stream {
                                     case [{kind: TkParenClose}]:
+                                        if (peek(0).kind == TkArrow)
+                                            unexpected();
                                         TTuple([t]);
+
                                     case [types = separated(TkComma, parseSyntaxType), {kind: TkParenClose}]:
                                         types.unshift(t);
-                                        TTuple(types);
+
+                                        switch stream {
+                                            case [{kind: TkArrow}, ret = parseSyntaxType()]:
+                                                TFunction([for (t in types) new FunctionArg("", t)], ret);
+                                            case _:
+                                                TTuple(types);
+                                        }
                                 }
                         }
                 }
