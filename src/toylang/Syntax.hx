@@ -90,6 +90,7 @@ enum FieldKind {
 enum SyntaxType {
     TPath(module:Array<String>, name:String);
     TTuple(types:Array<SyntaxType>);
+    TFunction(args:Array<FunctionArg>, returnType:SyntaxType);
 }
 
 class Expr {

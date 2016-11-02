@@ -179,6 +179,15 @@ class Printer {
         return switch (type) {
             case TPath(module, name):
                 module.concat([name]).join(".");
+
+            case TFunction(args, ret):
+                var b = new StringBuf();
+                b.add("(");
+                b.add([for (arg in args) '${arg.name}:${printSyntaxType(arg.type)}'].join(", "));
+                b.add(")=>");
+                b.add(printSyntaxType(ret));
+                b.toString();
+
             case TTuple(types):
                 switch (types) {
                     case []: "()";

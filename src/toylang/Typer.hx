@@ -69,8 +69,12 @@ class Typer {
                     case TDClass(cl): TInst(cl);
                     case TDFunction(_): throw false;
                 }
+
             case TTuple(types):
                 TTuple(types.map(typeType));
+
+            case TFunction(args, ret):
+                TFun([for (a in args) new TFunctionArg(a.name, typeType(a.type))], typeType(ret));
         }
     }
 
