@@ -224,10 +224,11 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                             // with explicit return type declaration
                             case [t = parseTypeHint()]:
                                 // obviously, we expect an arrow followed by an expression here
-                                parseExpect(function() return switch stream {
+                                var e = parseExpect(function() return switch stream {
                                     case [{kind: TkArrow}, e = parseExpr()]:
-                                        mk(EArrowFunction([], t, e), Position.union(pmin, last.pos));
+                                        e;
                                 });
+                                mk(EArrowFunction([], t, e), Position.union(pmin, last.pos));
 
                             // otherwise, it's an empty tuple
                             case _:
