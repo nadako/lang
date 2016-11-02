@@ -1,16 +1,3 @@
 function main():Void {
-    var a: (); // 0-tuple
-    var a: () => Bool; // 0-ary fun
-
-    //var a: (Int); // invalid to avoid confusion
-    var a: (Int,); // 1-tuple
-    var a: (Int) => Bool; // 1-ary fun
-    //var a: (Int,) => Bool; // invalid to avoid confusion
-
-    var a: (Int,String); // 2-tuple
-    var a: (Int,String) => Bool; // 2-ary fun
-
-    var a: (()) => Bool; // 1-ary fun that receives 0-tuple
-    var a: ((Int,)) => Bool; // 1-ary fun that receives 1-tuple
-    var a: ((Int,String)) => Bool; // 1-ary fun that receives 2-tuple
+    var f = x => trace(x);
 }

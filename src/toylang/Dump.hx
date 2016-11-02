@@ -105,7 +105,7 @@ class Dump {
                 throw "TODO";
 
             case TFunction(_, _, expr):
-                b.add(dumpExpr(e, level + 1));
+                b.add(dumpExpr(expr, level + 1));
         }
         return b.toString();
     }
