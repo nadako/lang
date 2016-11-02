@@ -17,6 +17,8 @@ in my toy language:
 
  * Tuples. Yes, please! Also, with matching and inlining support.
 
+ * Fail after typing functions if argument or return types are still unknown. Better safe than sorry.
+
  * Simplier module system where there's no packages, but only modules and declarations in them.
    Hierarchy could be represented by submodules which are modules in a directory (in which case,
    the root module declarations would live in a file with a special name, like `module.hx`).
