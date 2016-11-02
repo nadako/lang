@@ -29,6 +29,24 @@ class Dump {
         inline function indent(l) b.add(StringTools.lpad("", "\t", l));
         indent(level);
         b.add(e.kind.getName());
+        switch (e.kind) {
+            case TLocal(v):
+                b.add("(");
+                b.add(v.name);
+                b.add(")");
+
+            case TLiteral(l):
+                b.add("(");
+                b.add(switch (l) {
+                    case LString(s): '"' + Lexer.escapeString(s) + '"';
+                    case LInt(i): Std.string(i);
+                    case LBool(true): "true";
+                    case LBool(false): "false";
+                });
+                b.add(")");
+
+            default:
+        }
         b.add(" : ");
         b.add(dumpType(e.type));
         b.add("\n");
@@ -49,33 +67,14 @@ class Dump {
                 b.add(dumpExpr(e, level + 1));
                 b.add("\n");
                 indent(level + 1);
-                b.add("(\n");
+                b.add("-ARGS-\n");
                 for (e in args) {
                     b.add(dumpExpr(e, level + 1));
                     b.add("\n");
                 }
-                indent(level + 1);
-                b.add(")");
 
             case TLocal(v):
-                indent(level + 1);
-                b.add(v.name);
-
-            case TLiteral(LString(s)):
-                indent(level + 1);
-                b.add(s);
-
-            case TLiteral(LInt(i)):
-                indent(level + 1);
-                b.add(i);
-
-            case TLiteral(LBool(true)):
-                indent(level + 1);
-                b.add("true");
-
-            case TLiteral(LBool(false)):
-                indent(level + 1);
-                b.add("false");
+            case TLiteral(_):
 
             case TVar(v, e):
                 indent(level + 1);
