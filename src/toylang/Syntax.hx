@@ -26,6 +26,7 @@ enum TokenKind {
     TkDot;
     TkColon;
     TkSemicolon;
+    TkArrow;
     TkEqual;
     TkEof;
 }

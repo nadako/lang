@@ -49,6 +49,7 @@ class Lexer extends hxparse.Lexer implements hxparse.RuleBuilder {
         ":" => mk(lexer, TkColon),
         "{" => mk(lexer, TkBraceOpen),
         "}" => mk(lexer, TkBraceClose),
+        "=>" => mk(lexer, TkArrow),
         "=" => mk(lexer, TkEqual),
         "\\(" => mk(lexer, TkParenOpen),
         "\\)" => mk(lexer, TkParenClose),
