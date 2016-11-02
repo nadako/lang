@@ -148,6 +148,18 @@ class Printer {
             case ELiteral(LInt(s)):
                 s;
 
+            case EIf(cond, then, els):
+                var buf = new StringBuf();
+                buf.add("if ");
+                buf.add(printExpr(cond, level));
+                buf.add(" ");
+                buf.add(printExpr(then, level));
+                if (els != null) {
+                    buf.add(" else ");
+                    buf.add(printExpr(els, level));
+                }
+                buf.toString();
+
             case EVar(name, type, initial):
                 printVar(name, type, initial, level);
 

@@ -181,7 +181,26 @@ class Typer {
 
             case EField(_, _):
                 throw false;
+
+            case EIf(econd, ethen, eelse):
+                typeIf(econd, ethen, eelse, e.pos);
         }
+    }
+
+    function typeIf(econd:Expr, ethen:Expr, eelse:Null<Expr>, pos:Position):TExpr {
+        var econd = typeExpr(econd);
+        unifyThrow(econd.type, tBool, econd.pos);
+        var ethen = typeExpr(ethen);
+        var type = ethen.type;
+        var eelse =
+            if (eelse != null) {
+                var e = typeExpr(eelse);
+                unifyThrow(e.type, type, e.pos);
+                e;
+            } else {
+                null;
+            };
+        return new TExpr(TIf(econd, ethen, eelse), type, pos);
     }
 
     function typeCall(eobj:Expr, eargs:Array<Expr>, pos:Position):TExpr {

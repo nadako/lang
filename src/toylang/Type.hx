@@ -91,6 +91,7 @@ enum TExprKind {
     TField(e:TExpr, f:FieldAccess);
     TCall(e:TExpr, args:Array<TExpr>);
     TLiteral(l:TLiteral);
+    TIf(econd:TExpr, ethen:TExpr, eelse:Null<TExpr>);
 }
 
 enum TLiteral {

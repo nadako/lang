@@ -202,6 +202,21 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                                 parseExprNext(mk(ETuple(exprs), Position.union(pmin, last.pos)));
                         }
                 }
+            case [{kind: TkKeyword(KwdIf), pos: pmin}, econd = parseExpr(), ethen = parseExpr()]:
+                var eelse = switch stream {
+                    case [{kind: TkKeyword(KwdElse)}, e = parseExpr()]:
+                        e;
+                    case _:
+                        switch [peek(0), peek(1)] {
+                            case [{kind: TkSemicolon}, {kind: TkKeyword(KwdElse)}]:
+                                junk();
+                                junk();
+                                parseExpr();
+                            case _:
+                                null;
+                        }
+                }
+                mk(EIf(econd, ethen, eelse), Position.union(pmin, last.pos));
             case [v = parseVar()]:
                 mk(EVar(v.name, v.type, v.initial), v.pos);
         }

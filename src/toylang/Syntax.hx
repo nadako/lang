@@ -34,6 +34,8 @@ enum Keyword {
     KwdFunction;
     KwdClass;
     KwdVar;
+    KwdIf;
+    KwdElse;
 }
 
 enum Literal {
@@ -107,4 +109,5 @@ enum ExprKind {
     EVar(name:String, type:Null<SyntaxType>, initial:Null<Expr>);
     ETuple(exprs:Array<Expr>);
     EParens(expr:Expr);
+    EIf(cond:Expr, then:Expr, els:Null<Expr>);
 }
