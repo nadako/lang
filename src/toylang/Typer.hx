@@ -23,6 +23,7 @@ enum TyperErrorMessage {
     UnificationError(a:Type, b:Type);
     InsufficientArguments(remainingArgs:Array<TFunctionArg>);
     TooManyArguments;
+    TypeIsNotCallable(t:Type);
     CouldntInferArgumentType(argName:String);
     CouldntInferReturnType;
 }
@@ -203,7 +204,7 @@ class Typer {
                 m.resolve(TFun(args, returnType));
 
             case other:
-                throw "cannot call non-function type " + other;
+                throw new TyperError(TypeIsNotCallable(other), pos);
         }
         return new TExpr(TCall(eobj, typedArgs), returnType, pos);
     }
