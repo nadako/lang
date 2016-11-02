@@ -39,6 +39,12 @@ class Dump {
                     b.add("\n");
                 }
 
+            case TTuple(exprs):
+                for (e in exprs) {
+                    b.add(dumpExpr(e, level + 1));
+                    b.add("\n");
+                }
+
             case TCall(e, args):
                 b.add(dumpExpr(e, level + 1));
                 b.add("\n");
@@ -89,8 +95,10 @@ class Dump {
         return b.toString();
     }
 
-    static inline function dumpType(t:Type):String {
+    static function dumpType(t:Type):String {
         return switch (t) {
+            case TTuple(types):
+                'TTuple(${types.map(dumpType).join(", ")})';
             case TInst(c):
                 'TInst(${dumpPath(c.module, c.name)})';
             case TFun(args,ret):

@@ -1,2 +1,13 @@
-function main(a:Int, b:String):Void {
+function main(coords:(Int,Int)):Void {
+    var a = ();
+    var b = (42,);
+    var c = (false, "hello");
+
+    var d = (42); // parens
+
+    var a:() = ();
+    var b:(Int,) = (42,);
+    var c:(Int,String) = (42,"hello");
+
+    var d:(Int) = 42; // parens
 }

@@ -48,6 +48,7 @@ enum Type {
     TMono(m:Monomorph);
     TInst(c:TClassDecl);
     TFun(args:Array<TFunctionArg>, ret:Type);
+    TTuple(types:Array<Type>);
 }
 
 class Monomorph {
@@ -84,6 +85,7 @@ class TVar {
 
 enum TExprKind {
     TBlock(exprs:Array<TExpr>);
+    TTuple(exprs:Array<TExpr>);
     TVar(v:TVar, einitial:Null<TExpr>);
     TLocal(v:TVar);
     TField(e:TExpr, f:FieldAccess);

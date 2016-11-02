@@ -10,7 +10,7 @@ class Main {
         var decls = parser.parse();
         var typer = new Typer();
         for (decl in decls) {
-            // Sys.println(printer.printDecl(decl));
+            Sys.println(printer.printDecl(decl));
             var typed = typer.typeDecl(decl);
             Sys.println(Dump.dumpTypeDecl(typed));
         }

@@ -141,11 +141,29 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
 
     function parseSyntaxType():SyntaxType {
         return switch stream {
+            case [{kind: TkParenOpen}]:
+                switch stream {
+                    case [{kind: TkParenClose}]:
+                        TTuple([]);
+                    case [t = parseSyntaxType()]:
+                        switch stream {
+                            case [{kind: TkParenClose}]:
+                                t;
+                            case [{kind: TkComma}]:
+                                switch stream {
+                                    case [{kind: TkParenClose}]:
+                                        TTuple([t]);
+                                    case [types = separated(TkComma, parseSyntaxType), {kind: TkParenClose}]:
+                                        types.unshift(t);
+                                        TTuple(types);
+                                }
+                        }
+                }
             case [path = separated(TkDot, parseIdent)]:
                 if (path.length == 0)
                     unexpected();
                 var name = path.pop();
-                return TPath(path, name);
+                TPath(path, name);
         }
     }
 
@@ -171,6 +189,19 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                 parseExprNext(mk(EIdent(ident), last.pos));
             case [{kind: TkLiteral(literal)}]:
                 parseExprNext(mk(ELiteral(literal), last.pos));
+            case [{kind: TkParenOpen, pos: pmin}]:
+                switch stream {
+                    case [{kind: TkParenClose}]:
+                        parseExprNext(mk(ETuple([]), Position.union(pmin, last.pos)));
+                    case [e = parseExpr()]:
+                        switch stream {
+                            case [{kind: TkParenClose}]:
+                                parseExprNext(mk(EParens(e), Position.union(pmin, last.pos)));
+                            case [{kind: TkComma}, exprs = separated(TkComma, parseExpr), {kind: TkParenClose}]:
+                                exprs.unshift(e);
+                                parseExprNext(mk(ETuple(exprs), Position.union(pmin, last.pos)));
+                        }
+                }
             case [v = parseVar()]:
                 mk(EVar(v.name, v.type, v.initial), v.pos);
         }

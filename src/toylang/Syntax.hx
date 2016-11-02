@@ -86,6 +86,7 @@ enum FieldKind {
 
 enum SyntaxType {
     TPath(module:Array<String>, name:String);
+    TTuple(types:Array<SyntaxType>);
 }
 
 class Expr {
@@ -104,4 +105,6 @@ enum ExprKind {
     EField(expr:Expr, field:String);
     ECall(expr:Expr, args:Array<Expr>);
     EVar(name:String, type:Null<SyntaxType>, initial:Null<Expr>);
+    ETuple(exprs:Array<Expr>);
+    EParens(expr:Expr);
 }

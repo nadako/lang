@@ -150,13 +150,29 @@ class Printer {
 
             case EVar(name, type, initial):
                 printVar(name, type, initial, level);
+
+            case EParens(e):
+                '(${printExpr(e, level)})';
+
+            case ETuple(exprs):
+                switch (exprs) {
+                    case []: "()";
+                    case [expr]: '(${printExpr(expr, level)},)';
+                    case _: '(${[for (e in exprs) printExpr(e, level)].join(", ")})';
+                }
         }
     }
 
     public function printSyntaxType(type:SyntaxType):String {
         return switch (type) {
             case TPath(module, name):
-                return module.concat([name]).join(".");
+                module.concat([name]).join(".");
+            case TTuple(types):
+                switch (types) {
+                    case []: "()";
+                    case [type]: '(${printSyntaxType(type)},)';
+                    case _: '(${types.map(printSyntaxType).join(", ")})';
+                }
         }
     }
 }

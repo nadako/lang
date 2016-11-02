@@ -26,6 +26,8 @@ enum TyperErrorMessage {
     TypeIsNotCallable(t:Type);
     CouldntInferArgumentType(argName:String);
     CouldntInferReturnType;
+    InsufficientTupleElements(remainingTypes:Array<Type>);
+    TooManyTupleElements;
 }
 
 class Typer {
@@ -67,6 +69,8 @@ class Typer {
                     case TDClass(cl): TInst(cl);
                     case TDFunction(_): throw false;
                 }
+            case TTuple(types):
+                TTuple(types.map(typeType));
         }
     }
 
@@ -124,6 +128,9 @@ class Typer {
 
     function typeExpr(e:Expr):TExpr {
         return switch (e.kind) {
+            case EParens(e):
+                typeExpr(e);
+
             case EBlock(exprs):
                 var typedExprs = [];
                 pushLocals();
@@ -169,6 +176,9 @@ class Typer {
                 localsStack.first()[name] = v;
                 new TExpr(TVar(v, einitial), tVoid, e.pos);
 
+            case ETuple(exprs):
+                typeTuple(exprs, e.pos);
+
             case EField(_, _):
                 throw false;
         }
@@ -207,6 +217,17 @@ class Typer {
                 throw new TyperError(TypeIsNotCallable(other), pos);
         }
         return new TExpr(TCall(eobj, typedArgs), returnType, pos);
+    }
+
+    function typeTuple(exprs:Array<Expr>, pos:Position):TExpr {
+        var types = [];
+        var typedExprs = [];
+        for (e in exprs) {
+            var e = typeExpr(e);
+            typedExprs.push(e);
+            types.push(e.type);
+        }
+        return new TExpr(TTuple(typedExprs), TTuple(types), pos);
     }
 
     function findLocal(name:String):Null<TVar> {
@@ -294,6 +315,15 @@ class Typer {
                 }
             case [TInst(ca), TInst(cb)]:
                 ca == cb;
+            case [TTuple(ta), TTuple(tb)] if (ta.length == tb.length):
+                var result = true;
+                for (i in 0...ta.length) {
+                    if (!unify(ta[i], tb[i])) {
+                        result = false;
+                        break;
+                    }
+                }
+                result;
             default:
                 false;
         }
