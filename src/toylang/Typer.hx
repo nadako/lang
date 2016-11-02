@@ -23,6 +23,8 @@ enum TyperErrorMessage {
     UnificationError(a:Type, b:Type);
     InsufficientArguments(remainingArgs:Array<TFunctionArg>);
     TooManyArguments;
+    CouldntInferArgumentType(argName:String);
+    CouldntInferReturnType;
 }
 
 class Typer {
@@ -84,6 +86,12 @@ class Typer {
             }
             decl.expr = typeExpr(fun.expr);
             popLocals();
+            for (arg in decl.args) {
+                if (isMono(arg.type))
+                    throw new TyperError(CouldntInferArgumentType(arg.name), decl.pos);
+            }
+            if (isMono(decl.ret))
+                throw new TyperError(CouldntInferReturnType, decl.pos);
         } else {
             for (arg in fun.args) {
                 var type = typeType(arg.type);
@@ -237,6 +245,18 @@ class Typer {
 
     inline static function mkMono():Type {
         return TMono(new Monomorph());
+    }
+
+    static function isMono(t:Type):Bool {
+        return switch (t) {
+            case TMono(m):
+                if (m.type == null)
+                    true;
+                else
+                    isMono(m.type);
+            default:
+                false;
+        }
     }
 
     static function follow(a:Type):Type {

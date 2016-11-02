@@ -1,2 +1,2 @@
-function main() {
+function main(a:Int, b:String):Void {
 }
