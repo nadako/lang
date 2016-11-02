@@ -66,18 +66,10 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
     function parseClassField():Field {
         return switch stream {
             case [f = parseFunction()]:
-                var field = new Field();
-                field.name = f.fun.name;
-                field.pos = f.pos;
-                field.kind = FFun(f.fun);
-                field;
+                new Field(f.fun.name, FFun(f.fun), f.pos);
 
             case [v = parseVar(), _ = checkSemicolon()]:
-                var field = new Field();
-                field.name = v.name;
-                field.pos = v.pos;
-                field.kind = FVar(v.type, v.initial);
-                field;
+                new Field(v.name, FVar(v.type, v.initial), v.pos);
         }
     }
 
