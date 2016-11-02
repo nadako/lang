@@ -76,14 +76,12 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
     function parseFunction():{fun:FunctionDecl, pos:Position} {
         return switch stream {
             case [{kind: TkKeyword(KwdFunction), pos: pmin}, {kind: TkIdent(name)}, {kind: TkParenOpen}, args = separated(TkComma, parseFunctionArg), {kind: TkParenClose}, ret = parseOptional(parseTypeHint)]:
-                var expr = switch stream {
+                var expr = parseExpect(function() return switch stream {
                     case [e = parseExprWithSemicolon()]:
                         e;
                     case [{kind: TkSemicolon}]:
                         null;
-                    case _:
-                        unexpected();
-                };
+                });
                 {
                     fun: {
                         var f = new FunctionDecl();
@@ -142,12 +140,10 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                     case [t = parseSyntaxType()]:
                         switch stream {
                             case [{kind: TkParenClose}]:
-                                switch stream {
+                                parseExpect(function() return switch stream {
                                     case [{kind: TkArrow}, ret = parseSyntaxType()]:
                                         TFunction([new FunctionArg("", t)], ret);
-                                    case _:
-                                        unexpected();
-                                }
+                                });
 
                             case [{kind: TkComma}]:
                                 switch stream {
@@ -221,29 +217,16 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                         switch stream {
                             // if there's an arrow - it's an arrow function \o/
                             case [{kind: TkArrow}]:
-                                switch stream {
-                                    case [e = parseExpr()]:
-                                        mk(EArrowFunction([], null, e), Position.union(pmin, last.pos));
-                                    case _:
-                                        unexpected();
-                                }
+                                var e = parseExpect(parseExpr);
+                                mk(EArrowFunction([], null, e), Position.union(pmin, last.pos));
 
                             // if there's a type hint after this - it's a no-argument short lambda
                             // with explicit return type declaration
                             case [t = parseTypeHint()]:
-                                switch stream {
-                                    case [{kind: TkArrow}]:
-                                        switch stream {
-                                            case [e = parseExpr()]:
-                                                mk(EArrowFunction([], t, e), Position.union(pmin, last.pos));
-
-                                            case _:
-                                                unexpected();
-                                        }
-
-                                    case _:
-                                        unexpected();
-                                }
+                                parseExpect(function() return switch stream {
+                                    case [{kind: TkArrow}, e = parseExpr()]:
+                                        mk(EArrowFunction([], t, e), Position.union(pmin, last.pos));
+                                });
 
                             // otherwise, it's an empty tuple
                             case _:
