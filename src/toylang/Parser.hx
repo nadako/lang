@@ -147,8 +147,6 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                         TTuple([]);
                     case [t = parseSyntaxType()]:
                         switch stream {
-                            case [{kind: TkParenClose}]:
-                                t;
                             case [{kind: TkComma}]:
                                 switch stream {
                                     case [{kind: TkParenClose}]:
@@ -159,6 +157,7 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                                 }
                         }
                 }
+
             case [path = separated(TkDot, parseIdent)]:
                 if (path.length == 0)
                     unexpected();
