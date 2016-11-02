@@ -215,7 +215,7 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                     // closing paren just after opening is either an empty tuple or no-argument short lambda
                     case [{kind: TkParenClose}]:
                         switch stream {
-                            // if there's an arrow - it's an arrow function \o/
+                            // if there's an arrow - it's an arrow function, expect and expression
                             case [{kind: TkArrow}]:
                                 var e = parseExpect(parseExpr);
                                 mk(EArrowFunction([], null, e), Position.union(pmin, last.pos));
@@ -223,6 +223,7 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                             // if there's a type hint after this - it's a no-argument short lambda
                             // with explicit return type declaration
                             case [t = parseTypeHint()]:
+                                // obviously, we expect an arrow followed by an expression here
                                 parseExpect(function() return switch stream {
                                     case [{kind: TkArrow}, e = parseExpr()]:
                                         mk(EArrowFunction([], t, e), Position.union(pmin, last.pos));
