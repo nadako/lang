@@ -197,27 +197,21 @@ class Typer {
     }
 
     function typeFunctionExpr(args:Array<FunctionArg>, ret:Null<SyntaxType>, expr:Expr, pos:Position):TExpr {
-        var ret = typeType(ret);
-        var typedArgs = [];
-
         var locals = pushLocals();
+
+        var typedArgs = [];
         for (arg in args) {
             var type = typeType(arg.type);
             typedArgs.push(new TFunctionArg(arg.name, type));
             locals[arg.name] = new TVar(arg.name, type);
         }
+
         var expr = typeExpr(expr);
+
         popLocals();
 
-        for (arg in typedArgs) {
-            if (isMono(arg.type))
-                throw new TyperError(CouldntInferArgumentType(arg.name), pos);
-        }
-
-        if (isMono(ret)) {
-            //throw new TyperError(CouldntInferReturnType, decl.pos);
-            unify(ret, tVoid); // TODO: check return expressions
-        }
+        var ret = typeType(ret);
+        unifyThrow(expr.type, ret, pos);
 
         return new TExpr(TFunction(typedArgs, ret, expr), TFun(typedArgs, ret), pos);
     }
