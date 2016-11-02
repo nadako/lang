@@ -195,6 +195,7 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
         return switch stream {
             case [{kind: TkBraceOpen, pos: pmin}, exprs = parseRepeat(parseExprWithSemicolon), {kind: TkBraceClose}]:
                 mk(EBlock(exprs), Position.union(pmin, last.pos));
+
             case [{kind: TkIdent(ident), pos: pmin}]:
                 switch stream {
                     case [{kind: TkArrow}, e = parseExpr()]:
@@ -202,8 +203,10 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                     case _:
                         parseExprNext(mk(EIdent(ident), last.pos));
                 }
+
             case [{kind: TkLiteral(literal)}]:
                 parseExprNext(mk(ELiteral(literal), last.pos));
+
             case [{kind: TkParenOpen, pos: pmin}]:
                 switch stream {
                     case [{kind: TkParenClose}]:
@@ -217,6 +220,7 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                                 parseExprNext(mk(ETuple(exprs), Position.union(pmin, last.pos)));
                         }
                 }
+
             case [{kind: TkKeyword(KwdIf), pos: pmin}, {kind: TkParenOpen}, econd = parseExpr(), {kind: TkParenClose}, ethen = parseExpr()]:
                 var eelse = switch stream {
                     case [{kind: TkKeyword(KwdElse)}, e = parseExpr()]:
@@ -232,6 +236,7 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                         }
                 }
                 mk(EIf(econd, ethen, eelse), Position.union(pmin, last.pos));
+
             case [v = parseVar()]:
                 mk(EVar(v.name, v.type, v.initial), v.pos);
         }
