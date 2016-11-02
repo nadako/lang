@@ -202,7 +202,7 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                                 parseExprNext(mk(ETuple(exprs), Position.union(pmin, last.pos)));
                         }
                 }
-            case [{kind: TkKeyword(KwdIf), pos: pmin}, econd = parseExpr(), ethen = parseExpr()]:
+            case [{kind: TkKeyword(KwdIf), pos: pmin}, {kind: TkParenOpen}, econd = parseExpr(), {kind: TkParenClose}, ethen = parseExpr()]:
                 var eelse = switch stream {
                     case [{kind: TkKeyword(KwdElse)}, e = parseExpr()]:
                         e;

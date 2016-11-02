@@ -150,9 +150,9 @@ class Printer {
 
             case EIf(cond, then, els):
                 var buf = new StringBuf();
-                buf.add("if ");
+                buf.add("if (");
                 buf.add(printExpr(cond, level));
-                buf.add(" ");
+                buf.add(") ");
                 buf.add(printExpr(then, level));
                 if (els != null) {
                     buf.add(" else ");
