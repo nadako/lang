@@ -172,6 +172,26 @@ class Printer {
                     case [expr]: '(${printExpr(expr, level)},)';
                     case _: '(${[for (e in exprs) printExpr(e, level)].join(", ")})';
                 }
+
+            case EArrowFunction(args, ret, expr):
+                var buf = new StringBuf();
+                if (args.length == 1 && args[0].type == null && ret == null) {
+                    buf.add(args[0].name);
+                } else {
+                    buf.add("(");
+                    buf.add([
+                        for (arg in args)
+                            arg.name + if (arg.type == null) "" else ":" + printSyntaxType(arg.type)
+                    ].join(", "));
+                    buf.add(")");
+                    if (ret != null) {
+                        buf.add(":");
+                        buf.add(printSyntaxType(ret));
+                    }
+                }
+                buf.add(" => ");
+                buf.add(printExpr(expr, level));
+                buf.toString();
         }
     }
 

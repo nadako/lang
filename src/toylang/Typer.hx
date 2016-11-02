@@ -53,7 +53,7 @@ class Typer {
     public function typeDecl(decl:Decl):TDecl {
         return switch (decl.kind) {
             case DFunction(fun):
-                TDFunction(typeFunction(fun, decl.pos));
+                TDFunction(typeFunctionDecl(fun, decl.pos));
             case DClass(cls):
                 TDClass(typeClass(cls, decl.name, decl.pos));
         }
@@ -78,7 +78,7 @@ class Typer {
         }
     }
 
-    function typeFunction(fun:FunctionDecl, pos:Position):TFunctionDecl {
+    function typeFunctionDecl(fun:FunctionDecl, pos:Position):TFunctionDecl {
         var decl = new TFunctionDecl();
         decl.module = [];
         decl.name = fun.name;
@@ -190,7 +190,36 @@ class Typer {
 
             case EIf(econd, ethen, eelse):
                 typeIf(econd, ethen, eelse, e.pos);
+
+            case EArrowFunction(args, ret, expr):
+                typeFunctionExpr(args, ret, expr, e.pos);
         }
+    }
+
+    function typeFunctionExpr(args:Array<FunctionArg>, ret:Null<SyntaxType>, expr:Expr, pos:Position):TExpr {
+        var ret = typeType(ret);
+        var typedArgs = [];
+
+        var locals = pushLocals();
+        for (arg in args) {
+            var type = typeType(arg.type);
+            typedArgs.push(new TFunctionArg(arg.name, type));
+            locals[arg.name] = new TVar(arg.name, type);
+        }
+        var expr = typeExpr(expr);
+        popLocals();
+
+        for (arg in typedArgs) {
+            if (isMono(arg.type))
+                throw new TyperError(CouldntInferArgumentType(arg.name), pos);
+        }
+
+        if (isMono(ret)) {
+            //throw new TyperError(CouldntInferReturnType, decl.pos);
+            unify(ret, tVoid); // TODO: check return expressions
+        }
+
+        return new TExpr(TFunction(typedArgs, ret, expr), TFun(typedArgs, ret), pos);
     }
 
     function typeIf(econd:Expr, ethen:Expr, eelse:Null<Expr>, pos:Position):TExpr {

@@ -103,6 +103,9 @@ class Dump {
 
             case TField(e, f):
                 throw "TODO";
+
+            case TFunction(_, _, expr):
+                b.add(dumpExpr(e, level + 1));
         }
         return b.toString();
     }
