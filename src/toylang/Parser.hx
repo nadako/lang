@@ -193,24 +193,46 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
 
     function parseExpr():Expr {
         return switch stream {
+            // literal ("hi", 1, 1.5, etc.) is easy, nothing to do here
+            case [{kind: TkLiteral(literal)}]:
+                parseExprNext(mk(ELiteral(literal), last.pos));
+
+            // block, i.e. a list of expressions between {}, separated by semicolons
             case [{kind: TkBraceOpen, pos: pmin}, exprs = parseRepeat(parseExprWithSemicolon), {kind: TkBraceClose}]:
                 mk(EBlock(exprs), Position.union(pmin, last.pos));
 
+            // identifier can be either simple identifier expr, or an argument name for the short lambda
             case [{kind: TkIdent(ident), pos: pmin}]:
                 switch stream {
+                    // simpliest one argument arrow function, e.g. `x => ...`
                     case [{kind: TkArrow}, e = parseExpr()]:
                         mk(EArrowFunction([new FunctionArg(ident, null)], null, e), Position.union(pmin, last.pos));
+
+                    // if there was no arrow, it's a simple identifier expression, e.g. `x`
                     case _:
                         parseExprNext(mk(EIdent(ident), last.pos));
                 }
 
-            case [{kind: TkLiteral(literal)}]:
-                parseExprNext(mk(ELiteral(literal), last.pos));
-
+            // opening paren can lead to different things: expr in parens, a tuple or start of a short lambda
             case [{kind: TkParenOpen, pos: pmin}]:
                 switch stream {
+                    // closing paren just after opening is either an empty tuple or no-argument short lambda
                     case [{kind: TkParenClose}]:
-                        parseExprNext(mk(ETuple([]), Position.union(pmin, last.pos)));
+                        switch stream {
+                            // if there's an arrow - it's an arrow function \o/
+                            case [{kind: TkArrow}]:
+                                switch stream {
+                                    case [e = parseExpr()]:
+                                        mk(EArrowFunction([], null, e), Position.union(pmin, last.pos));
+                                    case _:
+                                        unexpected();
+                                }
+
+                            // otherwise, it's an empty tuple, simple as that
+                            case _:
+                                parseExprNext(mk(ETuple([]), Position.union(pmin, last.pos)));
+                        }
+
                     case [e = parseExpr()]:
                         switch stream {
                             case [{kind: TkParenClose}]:

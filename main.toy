@@ -1,4 +1,4 @@
 function main() {
-    var f = x => x;
-    var x = f(15);
+    var f = () => x => x;
+    var v = f()(10);
 }
