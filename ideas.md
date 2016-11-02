@@ -39,6 +39,9 @@ in my toy language:
    functions with different postfix names and call to them on targets that don't support native
    overloading.
 
+ * AST-level conditional compilation directives instead of token-level, only in places where it makes sense.
+   This way it's gonna be actually possible to write a decent code formatter.
+
  * Roslyn-like AST structures. This is something I'm not sure about, but the appealing
    fact is that their AST always contain full info to recreate a full source file after
    modification. This could ease the pain for writing refactoring tools.
