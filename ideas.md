@@ -6,6 +6,11 @@ in my toy language:
    should yield a `TImmutable` type as well, as for function calls, an explicit specifier
    could be used for starters, but later it could infer whether it mutates the instance or not.
 
+ * Null-safety. Assume all types non-nullable, unless they are annotated somehow, forbid using
+   `null` for non-nullable types, provide sugar for easy unwrapping. Ideally, also provide
+   automatic unwrapping on `if (some != null)` checks, but that's gonna require control flow
+   analysis.
+
  * Type classes AKA Rust-style traits. This is a really powerful concept with which we
    can provide required behaviour to any existing type without run-time overhead (via
    static dispatch).
