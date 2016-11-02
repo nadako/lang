@@ -228,7 +228,18 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                                         unexpected();
                                 }
 
-                            // otherwise, it's an empty tuple, simple as that
+                            // if there's a type hint after this - it's a no-argument short lambda
+                            // with explicit return type declaration
+                            case [t = parseTypeHint()]:
+                                switch stream {
+                                    case [{kind: TkArrow}, e = parseExpr()]:
+                                        mk(EArrowFunction([], t, e), Position.union(pmin, last.pos));
+
+                                    case _:
+                                        unexpected();
+                                }
+
+                            // otherwise, it's an empty tuple
                             case _:
                                 parseExprNext(mk(ETuple([]), Position.union(pmin, last.pos)));
                         }
