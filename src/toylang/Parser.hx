@@ -232,8 +232,14 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                             // with explicit return type declaration
                             case [t = parseTypeHint()]:
                                 switch stream {
-                                    case [{kind: TkArrow}, e = parseExpr()]:
-                                        mk(EArrowFunction([], t, e), Position.union(pmin, last.pos));
+                                    case [{kind: TkArrow}]:
+                                        switch stream {
+                                            case [e = parseExpr()]:
+                                                mk(EArrowFunction([], t, e), Position.union(pmin, last.pos));
+
+                                            case _:
+                                                unexpected();
+                                        }
 
                                     case _:
                                         unexpected();
