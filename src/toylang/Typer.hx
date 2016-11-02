@@ -46,7 +46,7 @@ class Typer {
         tBool = typeType(TPath([], "Bool"));
 
         var locals = pushLocals();
-        locals["trace"] = new TVar("trace", TFun([], tVoid));
+        locals["trace"] = new TVar("trace", TFun([new TFunctionArg("str", tString)], tVoid));
         locals["monoFun"] = new TVar("monoFun", mkMono());
     }
 
@@ -95,8 +95,10 @@ class Typer {
                 if (isMono(arg.type))
                     throw new TyperError(CouldntInferArgumentType(arg.name), decl.pos);
             }
-            if (isMono(decl.ret))
-                throw new TyperError(CouldntInferReturnType, decl.pos);
+            if (isMono(decl.ret)) {
+                //throw new TyperError(CouldntInferReturnType, decl.pos);
+                unify(decl.ret, tVoid); // TODO: check return expressions
+            }
         } else {
             for (arg in fun.args) {
                 var type = typeType(arg.type);

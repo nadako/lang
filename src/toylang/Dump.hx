@@ -93,12 +93,12 @@ class Dump {
                 b.add(dumpExpr(c, level + 1));
                 b.add("\n");
                 indent(level + 1);
-                b.add("-THEN\n");
+                b.add("-THEN-\n");
                 b.add(dumpExpr(t, level + 1));
                 if (e != null) {
                     b.add("\n");
                     indent(level + 1);
-                    b.add("-ELSE\n");
+                    b.add("-ELSE-\n");
                     b.add(dumpExpr(e, level + 1));
                 }
 
