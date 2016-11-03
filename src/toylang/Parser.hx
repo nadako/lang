@@ -130,58 +130,63 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
         return switch stream {
             // opening paren means either tuple or function type
             case [{kind: TkParenOpen}]:
-                switch stream {
-                    // if it's closed right away, it's either empty tuple or function type with no arguments,
-                    // depending on whether there's an arrow
-                    case [{kind: TkParenClose}]:
-                        switch stream {
-                            case [{kind: TkArrow}, ret = parseExpect(parseSyntaxType)]:
-                                TFunction([], ret);
-                            case _:
-                                TTuple([]);
-                        }
+                parseSyntaxTypeAfterParen();
 
-                    // parse first inner type
-                    case [t = parseSyntaxType()]:
-                        switch stream {
-                            // if it's just a type in parens `(Int)`, it MUST be followed by an arrow so it's a function type
-                            case [{kind: TkParenClose}]:
-                                parseExpect(function() return switch stream {
-                                    case [{kind: TkArrow}, ret = parseSyntaxType()]:
-                                        TFunction([new FunctionArg("", t)], ret);
-                                });
-
-                            // if it's followed by a comma, then it could be either a tuple or a function type
-                            case [{kind: TkComma}]:
-                                switch stream {
-                                    // closing paren right after comma - it's an 1-tuple
-                                    case [{kind: TkParenClose}]:
-                                        if (peek(0).kind == TkArrow)
-                                            unexpected(); // TODO: provide nice error message here
-                                        TTuple([t]);
-
-                                    // zero or more additional types separated by comma, followed by paren means
-                                    // that it's still either a tuple or a function type, depending on whether there's an arrow
-                                    case [types = separated(TkComma, parseSyntaxType), {kind: TkParenClose}]:
-                                        types.unshift(t);
-
-                                        switch stream {
-                                            case [{kind: TkArrow}, ret = parseExpect(parseSyntaxType)]:
-                                                TFunction([for (t in types) new FunctionArg("", t)], ret);
-                                            case _:
-                                                TTuple(types);
-                                        }
-                                }
-                        }
-
-                    case _:
-                        unexpected();
-                }
-
-            // finally, try parsing simple dot path
+            // otherwise try parsing simple dot path
             case [path = parseDotPath([])]:
                 var name = path.pop();
                 TPath(path, name);
+        }
+    }
+
+    function parseSyntaxTypeAfterParen():SyntaxType {
+        return switch stream {
+            // if it's closed right away, it's either empty tuple or function type with no arguments,
+            // depending on whether there's an arrow
+            case [{kind: TkParenClose}]:
+                switch stream {
+                    case [{kind: TkArrow}, ret = parseExpect(parseSyntaxType)]:
+                        TFunction([], ret);
+                    case _:
+                        TTuple([]);
+                }
+
+            // parse first inner type
+            case [t = parseSyntaxType()]:
+                switch stream {
+                    // if it's just a type in parens `(Int)`, it MUST be followed by an arrow so it's a function type
+                    case [{kind: TkParenClose}]:
+                        parseExpect(function() return switch stream {
+                            case [{kind: TkArrow}, ret = parseSyntaxType()]:
+                                TFunction([new FunctionArg("", t)], ret);
+                        });
+
+                    // if it's followed by a comma, then it could be either a tuple or a function type
+                    case [{kind: TkComma}]:
+                        switch stream {
+                            // closing paren right after comma - it's an 1-tuple
+                            case [{kind: TkParenClose}]:
+                                if (peek(0).kind == TkArrow)
+                                    unexpected(); // TODO: provide nice error message here
+                                TTuple([t]);
+
+                            // zero or more additional types separated by comma, followed by paren means
+                            // that it's still either a tuple or a function type, depending on whether there's an arrow
+                            case [types = separated(TkComma, parseSyntaxType), {kind: TkParenClose}]:
+                                types.unshift(t);
+
+                                switch stream {
+                                    case [{kind: TkArrow}, ret = parseExpect(parseSyntaxType)]:
+                                        TFunction([for (t in types) new FunctionArg("", t)], ret);
+                                    case _:
+                                        TTuple(types);
+                                }
+                        }
+                }
+
+            // if there was no closing paren and no syntax type - it's an error
+            case _:
+                unexpected();
         }
     }
 
@@ -199,6 +204,7 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
         }
         return acc;
     }
+
     function parseIdent():String {
         return switch stream {
             case [{kind: TkIdent(ident)}]:
