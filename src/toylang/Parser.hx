@@ -179,14 +179,26 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                 }
 
             // finally, try parsing simple dot path
-            case [path = separated(TkDot, parseIdent)]:
-                if (path.length == 0)
-                    unexpected();
+            case [path = parseDotPath([])]:
                 var name = path.pop();
                 TPath(path, name);
         }
     }
 
+    function parseDotPath(acc:Array<String>):Array<String> {
+        while (true) {
+            switch stream {
+                case [{kind: TkIdent(ident)}]:
+                    acc.push(ident);
+                    switch stream {
+                        case [{kind: TkDot}]:
+                        case _:
+                            break;
+                    }
+            }
+        }
+        return acc;
+    }
     function parseIdent():String {
         return switch stream {
             case [{kind: TkIdent(ident)}]:
