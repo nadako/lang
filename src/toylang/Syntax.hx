@@ -38,6 +38,9 @@ enum Keyword {
     KwdIf;
     KwdElse;
     KwdWhile;
+    KwdBreak;
+    KwdContinue;
+    KwdReturn;
 }
 
 enum Literal {
@@ -124,4 +127,7 @@ enum ExprKind {
     EIf(cond:Expr, then:Expr, els:Null<Expr>);
     EArrowFunction(args:Array<FunctionArg>, ret:Null<SyntaxType>, expr:Expr);
     EWhile(cond:Expr, body:Expr);
+    EBreak;
+    EContinue;
+    EReturn(e:Null<Expr>);
 }

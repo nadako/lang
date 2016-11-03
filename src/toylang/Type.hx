@@ -93,6 +93,9 @@ enum TExprKind {
     TLiteral(l:TLiteral);
     TIf(econd:TExpr, ethen:TExpr, eelse:Null<TExpr>);
     TWhile(econd:TExpr, ebody:TExpr);
+    TBreak;
+    TContinue;
+    TReturn(e:Null<TExpr>);
     TFunction(args:Array<TFunctionArg>, ret:Type, expr:TExpr);
 }
 

@@ -75,6 +75,11 @@ class Dump {
 
             case TLocal(v):
             case TLiteral(_):
+            case TBreak:
+            case TContinue:
+            case TReturn(e):
+                if (e != null)
+                    b.add(dumpExpr(e, level + 1));
 
             case TVar(v, e):
                 indent(level + 1);

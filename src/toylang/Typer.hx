@@ -194,6 +194,16 @@ class Typer {
             case EWhile(econd, ebody):
                 typeWhile(econd, ebody, e.pos);
 
+            case EBreak:
+                new TExpr(TBreak, mkMono(), e.pos);
+
+            case EContinue:
+                new TExpr(TContinue, mkMono(), e.pos);
+
+            case EReturn(re):
+                var re = if (re == null) null else typeExpr(re);
+                new TExpr(TReturn(re), mkMono(), e.pos);
+
             case EArrowFunction(args, ret, expr):
                 typeFunctionExpr(args, ret, expr, e.pos);
         }

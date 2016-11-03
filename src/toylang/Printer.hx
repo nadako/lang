@@ -138,6 +138,18 @@ class Printer {
             case EIdent(ident):
                 ident;
 
+            case EBreak:
+                "break";
+
+            case EContinue:
+                "continue";
+
+            case EReturn(e):
+                if (e == null)
+                    "return";
+                else
+                    "return " + printExpr(e, level);
+
             case ELiteral(LString(s)):
                 var buf = new StringBuf();
                 buf.add("\"");
