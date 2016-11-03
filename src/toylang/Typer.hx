@@ -373,11 +373,11 @@ class Typer {
                 }
                 result;
             case [TFun(aargs, aret), TFun(bargs, bret)] if (aargs.length == bargs.length):
-                if (!unify(aret, bret)) { // unify a with b - return types are covariant
+                if (!unify(aret, bret)) { // unify a with b - covariance
                     false;
                 } else {
                     for (i in 0...aargs.length) {
-                        if (!unify(bargs[i].type, aargs[i].type)) // unify b with a - argument types are contravariant
+                        if (!unify(bargs[i].type, aargs[i].type)) // unify b with a - contravariance
                             return false;
                     }
                     true;
