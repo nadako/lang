@@ -9,55 +9,40 @@ class Main {
         var printer = new Printer();
         var typer = new Typer();
 
-        try {
-            var decls = parser.parse();
-            for (decl in decls) {
-                // Sys.println(printer.printDecl(decl));
-                var typed = typer.typeDecl(decl);
-                Sys.println(Dump.dumpTypeDecl(typed));
-            }
-        } catch(e:toylang.Typer.TyperError) {
-            Sys.print(e.pos.format(input) + ": ");
-            switch (e.message) {
-                case UnificationError(actual, expected):
-                    Sys.println('`${typeToString(actual)}` should be `${typeToString(expected)}`');
-                case other:
-                    Sys.println(Std.string(other));
-            }
-            Sys.println(haxe.CallStack.toString(haxe.CallStack.exceptionStack()));
-        } catch (e:hxparse.ParserError) {
-            Sys.println(e.pos.format(input) + ": " + Std.string(e.toString()));
-            Sys.println(haxe.CallStack.toString(haxe.CallStack.exceptionStack()));
-        } catch (e:toylang.Parser.ParserError) {
-            Sys.println(e.pos.format(input) + ": " + Std.string(e.message));
-            Sys.println(haxe.CallStack.toString(haxe.CallStack.exceptionStack()));
-        }
-    }
+        var decls =
+            try {
+                parser.parse();
+            } catch (e:hxparse.ParserError) {
+                Sys.println(e.pos.format(input) + ": " + Std.string(e.toString()));
+                Sys.println(haxe.CallStack.toString(haxe.CallStack.exceptionStack()));
+                return;
+            } catch (e:toylang.Parser.ParserError) {
+                Sys.println(e.pos.format(input) + ": " + Std.string(e.message));
+                Sys.println(haxe.CallStack.toString(haxe.CallStack.exceptionStack()));
+                return;
+            };
 
-    static function typeToString(t:Type):String {
-        return switch (t) {
-            case TMono(m):
-                if (m.type == null)
-                    "<unknown>";
-                else
-                    typeToString(m.type);
-            case TInst(c):
-                c.module.concat([c.name]).join(".");
-            case TTuple(types):
-                var b = new StringBuf();
-                b.add("(");
-                b.add(types.map(typeToString).join(", "));
-                if (types.length == 1)
-                    b.add(",");
-                b.add(")");
-                b.toString();
-            case TFun(args, ret):
-                var b = new StringBuf();
-                b.add("(");
-                b.add([for (a in args) typeToString(a.type)].join(", "));
-                b.add(") => ");
-                b.add(typeToString(ret));
-                b.toString();
+        // for (decl in decls)
+        //     Sys.println(printer.printDecl(decl));
+
+        var typedDecls =
+            try {
+                decls.map(typer.typeDecl);
+            } catch(e:toylang.Typer.TyperError) {
+                Sys.print(e.pos.format(input) + ": ");
+                switch (e.message) {
+                    case UnificationError(actual, expected):
+                        Sys.println('`${Dump.typeToString(actual)}` should be `${Dump.typeToString(expected)}`');
+                    case other:
+                        Sys.println(Std.string(other));
+                }
+                Sys.println(haxe.CallStack.toString(haxe.CallStack.exceptionStack()));
+                return;
+            }
+
+        for (decl in decls) {
+            var typed = typer.typeDecl(decl);
+            Sys.println(Dump.dumpTypeDecl(typed));
         }
     }
 }

@@ -142,4 +142,31 @@ class Dump {
     static inline function dumpPath(module:Array<String>, name:String):String {
         return module.concat([name]).join(".");
     }
+
+    public static function typeToString(t:Type):String {
+        return switch (t) {
+            case TMono(m):
+                if (m.type == null)
+                    "<unknown>";
+                else
+                    typeToString(m.type);
+            case TInst(c):
+                c.module.concat([c.name]).join(".");
+            case TTuple(types):
+                var b = new StringBuf();
+                b.add("(");
+                b.add(types.map(typeToString).join(", "));
+                if (types.length == 1)
+                    b.add(",");
+                b.add(")");
+                b.toString();
+            case TFun(args, ret):
+                var b = new StringBuf();
+                b.add("(");
+                b.add([for (a in args) typeToString(a.type)].join(", "));
+                b.add(") => ");
+                b.add(typeToString(ret));
+                b.toString();
+        }
+    }
 }
