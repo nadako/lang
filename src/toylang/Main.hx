@@ -8,7 +8,6 @@ class Main {
         var parser = new Parser(input, file);
         var printer = new Printer();
         var typer = new Typer();
-        inline function formatPos(pos) return new hxparse.Position(pos.file, pos.min, pos.max).format(input);
 
         try {
             var decls = parser.parse();
@@ -18,7 +17,7 @@ class Main {
                 Sys.println(Dump.dumpTypeDecl(typed));
             }
         } catch(e:toylang.Typer.TyperError) {
-            Sys.print(formatPos(e.pos) + ": ");
+            Sys.print(e.pos.format(input) + ": ");
             switch (e.message) {
                 case UnificationError(actual, expected):
                     Sys.println('`${typeToString(actual)}` should be `${typeToString(expected)}`');
@@ -30,7 +29,7 @@ class Main {
             Sys.println(e.pos.format(input) + ": " + Std.string(e.toString()));
             Sys.println(haxe.CallStack.toString(haxe.CallStack.exceptionStack()));
         } catch (e:toylang.Parser.ParserError) {
-            Sys.println(formatPos(e.pos) + ": " + Std.string(e.message));
+            Sys.println(e.pos.format(input) + ": " + Std.string(e.message));
             Sys.println(haxe.CallStack.toString(haxe.CallStack.exceptionStack()));
         }
     }

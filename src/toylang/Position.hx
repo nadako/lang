@@ -11,7 +11,11 @@ class Position {
         this.max = max;
     }
 
-    public function toString():String {
+    public inline function format(input:byte.ByteData):String {
+        return new hxparse.Position(file, min, max).format(input);
+    }
+
+    public inline function toString():String {
         return '$file:$min-$max';
     }
 
