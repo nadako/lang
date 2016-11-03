@@ -209,7 +209,7 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
 
             // block, i.e. a list of expressions between {}, separated by semicolons
             case [{kind: TkBraceOpen, pos: pmin}, exprs = parseRepeat(parseExprWithSemicolon), {kind: TkBraceClose}]:
-                parseExprNext(mk(EBlock(exprs), Position.union(pmin, last.pos)));
+                mk(EBlock(exprs), Position.union(pmin, last.pos));
 
             // identifier can be either simple identifier expr, or an argument name for the short lambda
             case [{kind: TkIdent(ident), pos: pmin}]:
