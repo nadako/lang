@@ -1,5 +1,5 @@
 Aside from normal features already found in Haxe, it would be cool to implement this
-in my toy language:
+in my toy language (in no particular order):
 
  * Immutable types. For this, i'm thinking we could have a `TImmutable(t:Type)` type
    constructor and prevent mutating operations on it. field var access on an `TImmutable`
@@ -16,6 +16,9 @@ in my toy language:
    static dispatch).
 
  * Tuples. Yes, please! Also, with matching and inlining support.
+
+ * Flexible variance settings or even inference, so they are not always invariant like in Haxe.
+   This is gonna be an adventure, but an exciting one.
 
  * Fail after typing functions if argument or return types are still unknown. Better safe than sorry.
 
