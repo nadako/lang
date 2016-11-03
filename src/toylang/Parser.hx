@@ -18,6 +18,8 @@ class ParserError {
 
 enum ParserErrorMessage {
     MissingSemicolon;
+    TrailingCommaNotForUnaryTuple;
+    MissingTrailingCommaForUnaryTuple;
 }
 
 class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> implements hxparse.ParserBuilder {
@@ -140,53 +142,87 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
     }
 
     function parseSyntaxTypeAfterParen():SyntaxType {
-        return switch stream {
-            // if it's closed right away, it's either empty tuple or function type with no arguments,
-            // depending on whether there's an arrow
+        var args = [];
+        var tupleTypes = [];
+        var functionMode = false;
+
+        inline function addType(type) {
+            if (functionMode)
+                args.push(new FunctionArg("", type));
+            else
+                tupleTypes.push(type);
+        }
+
+        var trailingCommaPos = null;
+        while (true) {
+            if (peek(0).kind == TkParenClose)
+                break;
+
+            switch stream {
+                case [{kind: TkIdent(ident)}]:
+                    switch stream {
+                        case [{kind: TkColon}, type = parseExpect(parseSyntaxType)]:
+                            if (!functionMode) {
+                                functionMode = true;
+                                for (type in tupleTypes)
+                                    args.push(new FunctionArg("", type));
+                                tupleTypes = [];
+                            }
+                            args.push(new FunctionArg(ident, type));
+                        case [{kind: TkDot}, path = parseDotPath([ident])]:
+                            var name = path.pop();
+                            addType(TPath(path, name));
+                        case _:
+                            addType(TPath([], ident));
+                    }
+
+                case [{kind: TkParenOpen}, type = parseSyntaxTypeAfterParen()]:
+                    addType(type);
+
+                case _:
+                    unexpected();
+            }
+
+            if (peek(0).kind == TkComma) {
+                junk();
+                trailingCommaPos = last.pos;
+            } else {
+                trailingCommaPos = null;
+                break;
+            }
+        }
+
+        switch stream {
             case [{kind: TkParenClose}]:
-                switch stream {
-                    case [{kind: TkArrow}, ret = parseExpect(parseSyntaxType)]:
-                        TFunction([], ret);
-                    case _:
-                        TTuple([]);
+                var isFunction = functionMode || peek(0).kind == TkArrow;
+                // TODO: throw meaningful errors with good positions here
+                if (trailingCommaPos != null) {
+                    if (isFunction || tupleTypes.length != 1)
+                        throw new ParserError(TrailingCommaNotForUnaryTuple, trailingCommaPos);
+                } else {
+                    if (!isFunction && tupleTypes.length == 1)
+                        throw new ParserError(MissingTrailingCommaForUnaryTuple, last.pos);
                 }
 
-            // parse first inner type
-            case [t = parseSyntaxType()]:
-                switch stream {
-                    // if it's just a type in parens `(Int)`, it MUST be followed by an arrow so it's a function type
-                    case [{kind: TkParenClose}]:
-                        parseExpect(function() return switch stream {
-                            case [{kind: TkArrow}, ret = parseSyntaxType()]:
-                                TFunction([new FunctionArg("", t)], ret);
-                        });
-
-                    // if it's followed by a comma, then it could be either a tuple or a function type
-                    case [{kind: TkComma}]:
-                        switch stream {
-                            // closing paren right after comma - it's an 1-tuple
-                            case [{kind: TkParenClose}]:
-                                if (peek(0).kind == TkArrow)
-                                    unexpected(); // TODO: provide nice error message here
-                                TTuple([t]);
-
-                            // zero or more additional types separated by comma, followed by paren means
-                            // that it's still either a tuple or a function type, depending on whether there's an arrow
-                            case [types = separated(TkComma, parseSyntaxType), {kind: TkParenClose}]:
-                                types.unshift(t);
-
-                                switch stream {
-                                    case [{kind: TkArrow}, ret = parseExpect(parseSyntaxType)]:
-                                        TFunction([for (t in types) new FunctionArg("", t)], ret);
-                                    case _:
-                                        TTuple(types);
-                                }
-                        }
-                }
-
-            // if there was no closing paren and no syntax type - it's an error
             case _:
                 unexpected();
+        }
+
+        return if (functionMode) {
+            switch stream {
+                case [{kind: TkArrow}, ret = parseSyntaxType()]:
+                    TFunction(args, ret);
+                case _:
+                    unexpected();
+            }
+        } else {
+            switch stream {
+                case [{kind: TkArrow}, ret = parseExpect(parseSyntaxType)]:
+                    var args = [for (type in tupleTypes) new FunctionArg("", type)];
+                    TFunction(args, ret);
+                case _:
+                    TTuple(tupleTypes);
+            }
         }
     }
 

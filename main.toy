@@ -1,4 +1,23 @@
 function main() {
-    var f = () => x => x;
-    var v = f()(10);
+    var f: (); // empty tuple
+    var f: (Int,); // unary tuple
+    var f: (Int,String); // pair
+
+    var f: ()=>Int; // function with no args
+    var f: (Int)=>Int; // function with 1 arg
+    var f: (Int,String)=>Int; // function with 2 args
+
+    var f: (())=>Int; // function with 1 empty tuple arg
+    var f: ((Int,))=>Int; // function with 1 unary tuple arg
+    var f: ((Int)=>Int)=>Int; // function with 1 function arg
+
+    var f: (a:Int)=>Int; // function with 1 named arg
+    var f: (a:Int,String)=>Int; // function with 1 named and 1 unnamed arg
+    var f: (Int,b:String)=>Int; // function with 1 named and 1 unnamed arg, again
+    var f: (a:Int,b:String)=>Int; // function with two named args
+
+    var f: (a:())=>Int; // function with 1 named empty tuple arg
+    var f: (a:(Int,))=>Int; // function with 1 named unary tuple arg
+    var f: (a:(Int)=>Int)=>Int; // function with 1 named function arg
+    var f: (a.B, ()=>Int, c:a.C)=>((A, B))=>Int; // kill me...
 }
