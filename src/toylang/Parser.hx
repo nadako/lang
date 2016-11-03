@@ -329,6 +329,9 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                 }
                 mk(EIf(econd, ethen, eelse), Position.union(pmin, last.pos));
 
+            case [{kind: TkKeyword(KwdWhile), pos: pmin}, {kind: TkParenOpen}, econd = parseExpr(), {kind: TkParenClose}, ebody = parseExpr()]:
+                mk(EWhile(econd, ebody), Position.union(pmin, last.pos));
+
             case [v = parseVar()]:
                 mk(EVar(v.name, v.type, v.initial), v.pos);
         }

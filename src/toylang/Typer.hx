@@ -191,6 +191,9 @@ class Typer {
             case EIf(econd, ethen, eelse):
                 typeIf(econd, ethen, eelse, e.pos);
 
+            case EWhile(econd, ebody):
+                typeWhile(econd, ebody, e.pos);
+
             case EArrowFunction(args, ret, expr):
                 typeFunctionExpr(args, ret, expr, e.pos);
         }
@@ -230,6 +233,13 @@ class Typer {
                 null;
             };
         return new TExpr(TIf(econd, ethen, eelse), type, pos);
+    }
+
+    function typeWhile(econd:Expr, ebody:Expr, pos:Position):TExpr {
+        var econd = typeExpr(econd);
+        unifyThrow(econd.type, tBool, econd.pos);
+        var ebody = typeExpr(ebody);
+        return new TExpr(TWhile(econd, ebody), tVoid, pos);
     }
 
     function typeCall(eobj:Expr, eargs:Array<Expr>, pos:Position):TExpr {

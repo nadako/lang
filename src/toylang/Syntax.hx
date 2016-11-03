@@ -37,6 +37,7 @@ enum Keyword {
     KwdVar;
     KwdIf;
     KwdElse;
+    KwdWhile;
 }
 
 enum Literal {
@@ -122,4 +123,5 @@ enum ExprKind {
     EParens(expr:Expr);
     EIf(cond:Expr, then:Expr, els:Null<Expr>);
     EArrowFunction(args:Array<FunctionArg>, ret:Null<SyntaxType>, expr:Expr);
+    EWhile(cond:Expr, body:Expr);
 }

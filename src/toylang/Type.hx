@@ -92,6 +92,7 @@ enum TExprKind {
     TCall(e:TExpr, args:Array<TExpr>);
     TLiteral(l:TLiteral);
     TIf(econd:TExpr, ethen:TExpr, eelse:Null<TExpr>);
+    TWhile(econd:TExpr, ebody:TExpr);
     TFunction(args:Array<TFunctionArg>, ret:Type, expr:TExpr);
 }
 

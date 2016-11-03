@@ -173,6 +173,14 @@ class Printer {
                     case _: '(${[for (e in exprs) printExpr(e, level)].join(", ")})';
                 }
 
+            case EWhile(cond, body):
+                var buf = new StringBuf();
+                buf.add("while (");
+                buf.add(printExpr(cond, level));
+                buf.add(") ");
+                buf.add(printExpr(body, level));
+                buf.toString();
+
             case EArrowFunction(args, ret, expr):
                 var buf = new StringBuf();
                 if (args.length == 1 && args[0].type == null && ret == null) {

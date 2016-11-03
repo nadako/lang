@@ -101,6 +101,13 @@ class Dump {
                     b.add(dumpExpr(e, level + 1));
                 }
 
+            case TWhile(cond, body):
+                b.add(dumpExpr(cond, level + 1));
+                b.add("\n");
+                indent(level + 1);
+                b.add("-BODY-\n");
+                b.add(dumpExpr(body, level + 1));
+
             case TField(e, f):
                 throw "TODO";
 
