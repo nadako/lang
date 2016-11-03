@@ -319,7 +319,24 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
     }
 
     function separated<T>(kind:TokenKind, f:Void->T):Array<T> {
-        return parseSeparated(function(t) return t.kind == kind, f);
+        var acc = [];
+        var hadSep = false;
+        while(true) {
+            try {
+                acc.push(f());
+            } catch(e:hxparse.NoMatch<Dynamic>) {
+                if (hadSep) // forbid trailing separator
+                    unexpected();
+                break;
+            }
+            if (peek(0).kind == kind) {
+                hadSep = true;
+                junk();
+            } else {
+                break;
+            }
+        }
+        return acc;
     }
 
     inline function mk(kind:ExprKind, pos:Position):Expr {
