@@ -5,10 +5,8 @@ class Main {
     static function main() {
         var file = "main.toy";
         var input = byte.ByteData.ofBytes(sys.io.File.getBytes(file));
-        var parser = new Parser(input, file);
-        var printer = new Printer();
-        var typer = new Typer();
 
+        var parser = new Parser(input, file);
         var decls =
             try {
                 parser.parse();
@@ -22,9 +20,11 @@ class Main {
                 return;
             };
 
+        // var printer = new Printer();
         // for (decl in decls)
         //     Sys.println(printer.printDecl(decl));
 
+        var typer = new Typer();
         var typedDecls =
             try {
                 decls.map(typer.typeDecl);
