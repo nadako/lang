@@ -7,23 +7,31 @@ class Main {
         var input = byte.ByteData.ofBytes(sys.io.File.getBytes(file));
         var parser = new Parser(input, file);
         var printer = new Printer();
-        var decls = parser.parse();
         var typer = new Typer();
+        inline function formatPos(pos) return new hxparse.Position(pos.file, pos.min, pos.max).format(input);
+
         try {
+            var decls = parser.parse();
             for (decl in decls) {
                 // Sys.println(printer.printDecl(decl));
                 var typed = typer.typeDecl(decl);
                 Sys.println(Dump.dumpTypeDecl(typed));
             }
         } catch(e:toylang.Typer.TyperError) {
-            var pos = new hxparse.Position(e.pos.file, e.pos.min, e.pos.max);
-            Sys.print(pos.format(input));
+            Sys.print(formatPos(e.pos) + ": ");
             switch (e.message) {
                 case UnificationError(actual, expected):
-                    Sys.println(': `${typeToString(actual)}` should be `${typeToString(expected)}`');
+                    Sys.println('`${typeToString(actual)}` should be `${typeToString(expected)}`');
                 case other:
                     Sys.println(Std.string(other));
             }
+            Sys.println(haxe.CallStack.toString(haxe.CallStack.exceptionStack()));
+        } catch (e:hxparse.ParserError) {
+            Sys.println(e.pos.format(input) + ": " + Std.string(e.toString()));
+            Sys.println(haxe.CallStack.toString(haxe.CallStack.exceptionStack()));
+        } catch (e:toylang.Parser.ParserError) {
+            Sys.println(formatPos(e.pos) + ": " + Std.string(e.message));
+            Sys.println(haxe.CallStack.toString(haxe.CallStack.exceptionStack()));
         }
     }
 
