@@ -8,8 +8,8 @@ class Web {
     static var result:Element = cast document.getElementById("result");
 
     static function main(editor) {
-        var model = editor.getModel();
-        model.onDidChangeContent(function(_) {
+        var model:{function getValue():String; function onDidChangeContent(f:Void->Void):Void;} = editor.getModel();
+        function compile() {
             try {
                 var input = byte.ByteData.ofString(model.getValue());
                 var parser = new toylang.Parser(input, "code");
@@ -26,6 +26,8 @@ class Web {
             } catch (e:Any) {
                 result.innerText = 'ERROR: $e';
             }
-        });
+        }
+        model.onDidChangeContent(compile);
+        compile();
     }
 }

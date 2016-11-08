@@ -40,10 +40,12 @@
     require.config({ paths: { 'vs': 'monaco-editor' }});
     require(['vs/editor/editor.main'], function() {
         Web.main(monaco.editor.create(document.getElementById('code'), {
-            value: 'function some() {\
-    var a = "hello";\
-    trace(a);\
-}'}));
+            value: [
+                'function some() {',
+                '    var a = "hello";',
+                '    trace(a);',
+                '}'].join("\n")
+            }));
     });
 </script>
 </body>
