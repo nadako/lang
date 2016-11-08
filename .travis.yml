@@ -1,0 +1,18 @@
+sudo: required
+dist: trusty
+
+language: haxe
+
+os:
+  - linux
+
+haxe:
+  - development
+
+install:
+  - haxelib git hxparse https://github.com/Simn/hxparse
+
+script:
+  - cd demo
+  - haxe web.hxml
+  - bash deploy.sh
