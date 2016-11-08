@@ -1,0 +1,4 @@
+-cp ../src
+-lib hxparse
+Web
+-js web.js

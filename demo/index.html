@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        table {
+            width: 100%;
+            height: 800px;
+        }
+        table td {
+            width: 50%;
+            padding: 12px;
+            vertical-align: top;
+        }
+        #code, code {
+            width: 100%;
+            height: 100%;
+        }
+        #result {
+            white-space: pre;
+        }
+    </style>
+</head>
+<body>
+
+<table>
+    <tr>
+        <td>
+            <div id="code"></div>
+        </td>
+        <td>
+            <code id="result"></code>
+        </td>
+    </tr>
+</table>
+
+<script src="web.js"></script>
+<script src="monaco-editor/loader.js"></script>
+<script>
+    require.config({ paths: { 'vs': 'monaco-editor' }});
+    require(['vs/editor/editor.main'], function() {
+        Web.main(monaco.editor.create(document.getElementById('code')));
+    });
+</script>
+</body>
+</html>
