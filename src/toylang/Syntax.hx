@@ -28,6 +28,7 @@ enum TokenKind {
     TkSemicolon;
     TkArrow;
     TkEqual;
+    TkBackslash;
     TkEof;
 }
 

@@ -43,6 +43,7 @@ class Lexer extends hxparse.Lexer implements hxparse.RuleBuilder {
         whitespace => lexer.token(rule),
         integer => mk(lexer, TkLiteral(LInt(lexer.current))),
         commentLine => lexer.token(rule),
+        "\\\\" => mk(lexer, TkBackslash),
         "," => mk(lexer, TkComma),
         "\\." => mk(lexer, TkDot),
         ";" => mk(lexer, TkSemicolon),

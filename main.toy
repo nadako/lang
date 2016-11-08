@@ -1,9 +1,3 @@
 function main() {
-    var b = false;
-    while (true) {
-        if (b) break;
-        if (b) continue else break;
-        if (b) return;
-    }
-    return b;
+    var f = \():() => ();
 }

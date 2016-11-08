@@ -18,8 +18,6 @@ class ParserError {
 
 enum ParserErrorMessage {
     MissingSemicolon;
-    TrailingCommaNotForUnaryTuple;
-    MissingTrailingCommaForUnaryTuple;
 }
 
 class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> implements hxparse.ParserBuilder {
@@ -123,16 +121,33 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
 
     function parseTypeHint():SyntaxType {
         return switch stream {
-            case [{kind: TkColon}, type = parseSyntaxType()]:
+            case [{kind: TkColon}, type = parseExpect(parseSyntaxType)]:
                 type;
         }
     }
 
     function parseSyntaxType():SyntaxType {
         return switch stream {
-            // opening paren means either tuple or function type
+            // backslash means "lambda", so it's a function type
+            case [{kind: TkBackslash}]:
+                switch stream {
+                    case [{kind: TkParenOpen}, args = separated(TkComma, parseLambdaArg), {kind: TkParenClose}, {kind: TkArrow}, ret = parseSyntaxType()]:
+                        TFunction(args, ret);
+                    case _:
+                        unexpected();
+                }
+
+            // opening paren means it's a tuple
             case [{kind: TkParenOpen}]:
-                parseSyntaxTypeAfterParen();
+                switch stream {
+                    case [{kind: TkParenClose}]:
+                        TTuple([]);
+                    case [type = parseSyntaxType(), {kind: TkComma}, types = separated(TkComma, parseSyntaxType), {kind: TkParenClose}]:
+                        types.unshift(type);
+                        TTuple(types);
+                    case _:
+                        unexpected();
+                }
 
             // otherwise try parsing simple dot path
             case [path = parseDotPath([])]:
@@ -141,88 +156,29 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
         }
     }
 
-    function parseSyntaxTypeAfterParen():SyntaxType {
-        var args = [];
-        var tupleTypes = [];
-        var functionMode = false;
+    function parseLambdaArg():FunctionArg {
+        // lambda arg can be either Type, or name:Type
+        return switch stream {
+            // so when we encounter an identifier - it could be either a start of dot-path or an argument name
+            case [{kind: TkIdent(ident)}]:
+                switch stream {
+                    // if there's a colon - it's clearly a name - parse type after the colon
+                    case [{kind: TkColon}, type = parseExpect(parseSyntaxType)]:
+                        new FunctionArg(ident, type);
 
-        inline function addType(type) {
-            if (functionMode)
-                args.push(new FunctionArg("", type));
-            else
-                tupleTypes.push(type);
-        }
+                    // if there's a dot - it's a type path
+                    case [{kind: TkDot}, path = parseDotPath([ident])]:
+                        var name = path.pop();
+                        new FunctionArg("", TPath(path, name));
 
-        var trailingCommaPos = null;
-        while (true) {
-            if (peek(0).kind == TkParenClose)
-                break;
-
-            switch stream {
-                case [{kind: TkIdent(ident)}]:
-                    switch stream {
-                        case [{kind: TkColon}, type = parseExpect(parseSyntaxType)]:
-                            if (!functionMode) {
-                                functionMode = true;
-                                for (type in tupleTypes)
-                                    args.push(new FunctionArg("", type));
-                                tupleTypes = [];
-                            }
-                            args.push(new FunctionArg(ident, type));
-                        case [{kind: TkDot}, path = parseDotPath([ident])]:
-                            var name = path.pop();
-                            addType(TPath(path, name));
-                        case _:
-                            addType(TPath([], ident));
-                    }
-
-                case [{kind: TkParenOpen}, type = parseSyntaxTypeAfterParen()]:
-                    addType(type);
-
-                case _:
-                    unexpected();
-            }
-
-            if (peek(0).kind == TkComma) {
-                junk();
-                trailingCommaPos = last.pos;
-            } else {
-                trailingCommaPos = null;
-                break;
-            }
-        }
-
-        switch stream {
-            case [{kind: TkParenClose}]:
-                var isFunction = functionMode || peek(0).kind == TkArrow;
-                // TODO: throw meaningful errors with good positions here
-                if (trailingCommaPos != null) {
-                    if (isFunction || tupleTypes.length != 1)
-                        throw new ParserError(TrailingCommaNotForUnaryTuple, trailingCommaPos);
-                } else {
-                    if (!isFunction && tupleTypes.length == 1)
-                        throw new ParserError(MissingTrailingCommaForUnaryTuple, last.pos);
+                    // otherwise - it's a toplevel type path (e.g. Int)
+                    case _:
+                        new FunctionArg("", TPath([], ident));
                 }
 
+            // if there was no identifier - try parsing a type
             case _:
-                unexpected();
-        }
-
-        return if (functionMode) {
-            switch stream {
-                case [{kind: TkArrow}, ret = parseSyntaxType()]:
-                    TFunction(args, ret);
-                case _:
-                    unexpected();
-            }
-        } else {
-            switch stream {
-                case [{kind: TkArrow}, ret = parseExpect(parseSyntaxType)]:
-                    var args = [for (type in tupleTypes) new FunctionArg("", type)];
-                    TFunction(args, ret);
-                case _:
-                    TTuple(tupleTypes);
-            }
+                new FunctionArg("", parseSyntaxType());
         }
     }
 
@@ -265,52 +221,49 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
             case [{kind: TkBraceOpen, pos: pmin}, exprs = parseRepeat(parseExprWithSemicolon), {kind: TkBraceClose}]:
                 mk(EBlock(exprs), Position.union(pmin, last.pos));
 
-            // identifier can be either simple identifier expr, or an argument name for the short lambda
+            // identifier is, well, an identifier :)
             case [{kind: TkIdent(ident), pos: pmin}]:
-                switch stream {
-                    // simpliest one argument arrow function, e.g. `x => ...`
-                    case [{kind: TkArrow}, e = parseExpr()]:
-                        mk(EArrowFunction([new FunctionArg(ident, null)], null, e), Position.union(pmin, last.pos));
+                parseExprNext(mk(EIdent(ident), last.pos));
 
-                    // if there was no arrow, it's a simple identifier expression, e.g. `x`
-                    case _:
-                        parseExprNext(mk(EIdent(ident), last.pos));
-                }
-
-            // opening paren can lead to different things: expr in parens, a tuple or start of a short lambda
+            // opening paren can lead to different things: single expr in parens or a tuple
             case [{kind: TkParenOpen, pos: pmin}]:
                 switch stream {
-                    // closing paren just after opening is either an empty tuple or no-argument short lambda
+                    // closing paren just after opening is an empty tuple
                     case [{kind: TkParenClose}]:
-                        switch stream {
-                            // if there's an arrow - it's an arrow function, expect and expression
-                            case [{kind: TkArrow}]:
-                                var e = parseExpect(parseExpr);
-                                mk(EArrowFunction([], null, e), Position.union(pmin, last.pos));
+                        parseExprNext(mk(ETuple([]), Position.union(pmin, last.pos)));
 
-                            // if there's a type hint after this - it's a no-argument short lambda
-                            // with explicit return type declaration
-                            case [t = parseTypeHint()]:
-                                // obviously, we expect an arrow followed by an expression here
-                                var e = parseExpect(function() return switch stream {
-                                    case [{kind: TkArrow}, e = parseExpr()]:
-                                        e;
-                                });
-                                mk(EArrowFunction([], t, e), Position.union(pmin, last.pos));
-
-                            // otherwise, it's an empty tuple
-                            case _:
-                                parseExprNext(mk(ETuple([]), Position.union(pmin, last.pos)));
-                        }
-
+                    // if there was an expression - it's either expr in parens or a tuple, depending on whether there's a comma
                     case [e = parseExpr()]:
                         switch stream {
+                            // closing paren - it's a simple expr
                             case [{kind: TkParenClose}]:
                                 parseExprNext(mk(EParens(e), Position.union(pmin, last.pos)));
+
+                            // comma - it's a tuple!
                             case [{kind: TkComma}, exprs = separated(TkComma, parseExpr), {kind: TkParenClose}]:
                                 exprs.unshift(e);
                                 parseExprNext(mk(ETuple(exprs), Position.union(pmin, last.pos)));
                         }
+                }
+
+            // backslash means "lambda", so it's a function expr
+            case [{kind: TkBackslash, pos: pmin}]:
+                switch stream {
+                    // simple \x => x case
+                    case [{kind: TkIdent(arg)}]:
+                        switch stream {
+                            case [{kind: TkArrow}, e = parseExpr()]:
+                                mk(EArrowFunction([new FunctionArg(arg, null)], null, e), Position.union(pmin, last.pos));
+                            case _:
+                                unexpected();
+                        }
+
+                    // all other cases require parens
+                    case [{kind: TkParenOpen}, args = separated(TkComma, parseFunctionArg), {kind: TkParenClose}, ret = parseOptional(parseTypeHint), {kind: TkArrow}, e = parseExpr()]:
+                        mk(EArrowFunction(args, ret, e), Position.union(pmin, last.pos));
+
+                    case _:
+                        unexpected();
                 }
 
             case [{kind: TkKeyword(KwdIf), pos: pmin}, {kind: TkParenOpen}, econd = parseExpr(), {kind: TkParenClose}, ethen = parseExpr()]:
