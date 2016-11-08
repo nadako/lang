@@ -5,7 +5,7 @@
     <style>
         table {
             width: 100%;
-            height: 800px;
+            height: 400px;
         }
         table td {
             width: 50%;
@@ -33,6 +33,67 @@
         </td>
     </tr>
 </table>
+
+<code style="white-space:pre">
+// line comment
+/* block comment (no nesting yet) */
+
+// expressions:
+"string"
+1337
+ident
+
+call(a,b)
+
+var name
+var name:Type
+var name:Type = expr
+
+if (expr) expr
+if (expr) expr else expr
+
+while (expr) expr
+
+break
+return
+return expr
+continue
+
+() // empty tuple
+(expr,) // unary tuple
+(expr, expr, expr) // other tuples
+
+// anon functions
+\x => x // unhinted one-argument
+\(a,b) => a(b) // unhinted two-argument
+\(a:Type, b:Type):Type => a // fully hinted (both arguments and return type)
+
+// types:
+
+// type paths
+Int
+some.module.SomeType
+
+// tuple types
+() // empty
+(Int,) // unary
+(Int,String,Bool) // other
+
+// functions
+\() => Int // no arguments
+\(Int, String) => Bool // two unnamed arguments
+\(a:Int, b:String) => Bool // two named arguments
+
+// std types:
+Int
+String
+Bool
+Void
+
+// toplevel identifiers
+trace // \(str:String)=>Void
+monoFun // monomorph
+</code>
 
 <script src="web.js"></script>
 <script src="monaco-editor/loader.js"></script>
