@@ -28,6 +28,7 @@ enum TyperErrorMessage {
     CouldntInferReturnType;
     InsufficientTupleElements(remainingTypes:Array<Type>);
     TooManyTupleElements;
+    FieldNotFound(type:Type, name:String);
 }
 
 class Typer {
@@ -55,7 +56,7 @@ class Typer {
             case DFunction(fun):
                 TDFunction(typeFunctionDecl(fun, decl.pos));
             case DClass(cls):
-                TDClass(typeClass(cls, decl.name, decl.pos));
+                typeClass(cls, decl.name, decl.pos);
         }
     }
 
@@ -123,12 +124,24 @@ class Typer {
         localsStack.pop();
     }
 
-    function typeClass(cls:ClassDecl, name:String, pos:Position):TClassDecl {
-        var decl = new TClassDecl();
-        decl.module = [];
-        decl.name = name;
-        decl.pos = pos;
-        decl.fields = [for (field in cls.fields) new TClassField(field.name, mkMono(), field.pos)];
+    function typeClass(classDecl:ClassDecl, name:String, pos:Position):TDecl {
+        var cls = new TClassDecl();
+        var decl = TDClass(cls);
+        typeCache[name] = decl;
+
+        cls.module = [];
+        cls.name = name;
+        cls.pos = pos;
+        var fields = [];
+        for (field in classDecl.fields) {
+            switch (field.kind) {
+                case FVar(type, expr):
+                    fields.push(new TClassField(field.name, typeType(type), field.pos));
+                case FFun(_):
+                    throw "TODO";
+            }
+        }
+        cls.fields = fields;
         return decl;
     }
 
@@ -191,8 +204,17 @@ class Typer {
             case ETuple(exprs):
                 typeTuple(exprs, e.pos);
 
-            case EField(_, _):
-                throw false;
+            case EField(eobj, name):
+                var eobj = typeExpr(eobj);
+                switch (eobj.type) {
+                    case TInst(cls):
+                        var field = Lambda.find(cls.fields, function(f) return f.name == name);
+                        if (field == null)
+                            throw new TyperError(FieldNotFound(eobj.type, name), e.pos);
+                        return new TExpr(TField(eobj, FClassField(cls, field)), field.type, e.pos);
+                    default:
+                        throw "todo";
+                }
 
             case EIf(econd, ethen, eelse):
                 typeIf(econd, ethen, eelse, e.pos);

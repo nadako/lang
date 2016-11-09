@@ -123,8 +123,14 @@ class Dump {
                 b.add("-BODY-\n");
                 b.add(dumpExpr(body, level + 1));
 
-            case TField(e, f):
-                throw "TODO";
+            case TField(e, fa):
+                b.add(dumpExpr(e, level + 1));
+                b.add("\n");
+                indent(level + 1);
+                switch (fa) {
+                    case FClassField(cl, f):
+                        b.add(f.name);
+                }
 
             case TFunction(_, _, expr):
                 b.add(dumpExpr(expr, level + 1));
