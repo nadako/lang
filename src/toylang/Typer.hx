@@ -182,6 +182,12 @@ class Typer {
                 localsStack.first()[name] = v;
                 new TExpr(TVar(v, einitial), tVoid, e.pos);
 
+            case EBinop(OpAssign, left, right):
+                var left = typeExpr(left);
+                var right = typeExpr(right);
+                unifyThrow(right.type, left.type, e.pos);
+                new TExpr(TBinop(OpAssign, left, right), left.type, e.pos);
+
             case ETuple(exprs):
                 typeTuple(exprs, e.pos);
 

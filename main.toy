@@ -1,3 +1,4 @@
 function main() {
-    var f = \():() => ();
+    var a = 5;
+    a = 16;
 }

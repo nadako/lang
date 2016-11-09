@@ -128,6 +128,7 @@ enum ExprKind {
     EIf(cond:Expr, then:Expr, els:Null<Expr>);
     EArrowFunction(args:Array<FunctionArg>, ret:Null<SyntaxType>, expr:Expr);
     EWhile(cond:Expr, body:Expr);
+    EBinop(op:Binop, left:Expr, right:Expr);
     EBreak;
     EContinue;
     EReturn(e:Null<Expr>);

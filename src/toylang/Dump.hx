@@ -93,6 +93,16 @@ class Dump {
                     b.add(dumpExpr(e, level + 1));
                 }
 
+            case TBinop(op, left, right):
+                b.add(dumpExpr(left, level + 1));
+                b.add("\n");
+                indent(level + 1);
+                b.add(switch (op) {
+                    case OpAssign: "=";
+                });
+                b.add("\n");
+                b.add(dumpExpr(right, level + 1));
+
             case TIf(c, t, e):
                 b.add(dumpExpr(c, level + 1));
                 b.add("\n");

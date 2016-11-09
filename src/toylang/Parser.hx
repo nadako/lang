@@ -303,8 +303,13 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
         return switch stream {
             case [{kind: TkParenOpen}, args = separated(TkComma, parseExpr), {kind: TkParenClose}]:
                 parseExprNext(mk(ECall(expr, args), Position.union(expr.pos, last.pos)));
+
             case [{kind: TkDot}, {kind: TkIdent(ident)}]:
                 parseExprNext(mk(EField(expr, ident), Position.union(expr.pos, last.pos)));
+
+            case [{kind: TkEqual}, right = parseExpect(parseExpr)]:
+                parseExprNext(mk(EBinop(OpAssign, expr, right), Position.union(expr.pos, last.pos)));
+
             case _:
                 expr;
         }

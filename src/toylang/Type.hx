@@ -97,6 +97,7 @@ enum TExprKind {
     TContinue;
     TReturn(e:Null<TExpr>);
     TFunction(args:Array<TFunctionArg>, ret:Type, expr:TExpr);
+    TBinop(op:Binop, left:TExpr, right:TExpr);
 }
 
 enum TLiteral {
