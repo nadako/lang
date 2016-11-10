@@ -98,15 +98,62 @@ monoFun // monomorph
 <script src="web.js"></script>
 <script src="monaco-editor/loader.js"></script>
 <script>
+    var syntax = {
+        keywords: [
+            "class",
+            "function",
+            "var",
+            "if",
+            "else",
+            "while",
+            "break",
+            "continue",
+            "return"
+        ],
+        typeKeywords: [
+            "Void",
+            "String",
+            "Int",
+            "Bool",
+        ],
+        tokenizer: {
+            root: [
+                [/(_|[a-zA-Z])+[a-zA-Z0-9_]*/, {
+                    cases: {
+                        '@typeKeywords': 'keyword.type',
+                        '@keywords': 'keyword',
+                        '@default': 'identifier',
+                    }
+                }],
+                { include: '@whitespace' },
+            ],
+            whitespace: [
+                [/[ \t\r\n]+/, 'white'],
+                [/\/\*/,       'comment', '@comment'],
+                [/\/\/.*$/,    'comment'],
+            ],
+            comment: [
+                [/[^\/*]+/, 'comment' ],
+                ["\\*/",    'comment', '@pop'  ],
+                [/[\/*]/,   'comment' ]
+            ],
+        }
+    };
+
     require.config({ paths: { 'vs': 'monaco-editor' }});
     require(['vs/editor/editor.main'], function() {
+        monaco.languages.register({id: 'lang'});
+        monaco.languages.setMonarchTokensProvider('lang', syntax);
         Web.main(monaco.editor.create(document.getElementById('code'), {
+            language: 'lang',
+            theme: 'vs-dark',
             value: [
                 'function some() {',
                 '    var a = "hello";',
                 '    trace(a);',
                 '}'].join("\n")
-            }));
+            }
+        ));
     });
 </script>
 </body>
