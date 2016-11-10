@@ -100,43 +100,79 @@ monoFun // monomorph
 <script>
     var syntax = {
         keywords: [
-            "class",
-            "function",
-            "var",
-            "if",
-            "else",
-            "while",
-            "break",
-            "continue",
-            "return"
+            'break',
+            'class',
+            'continue',
+            'else',
+            'false',
+            'function',
+            'if',
+            'return',
+            'true',
+            'var',
+            'while',
         ],
-        typeKeywords: [
-            "Void",
-            "String",
-            "Int",
-            "Bool",
+
+        operators: [
+            '=',
         ],
+
+        brackets: [
+            ['(',')','bracket.parenthesis'],
+            ['{','}','bracket.curly'],
+        ],
+
+        // common regular expressions
+        symbols:  /[~!@#%\^&*-+=|\\:`<>.?\/]+/,
+        escapes:  /\\(?:[btnfr\\"']|[0-7][0-7]?|[0-3][0-7]{2})/,
+
         tokenizer: {
             root: [
-                [/(_|[a-zA-Z])+[a-zA-Z0-9_]*/, {
-                    cases: {
-                        '@typeKeywords': 'keyword.type',
-                        '@keywords': 'keyword',
-                        '@default': 'identifier',
-                    }
+                // identifiers and keywords
+                [/[_a-zA-Z]+[a-zA-Z0-9_]*/, {
+                    cases: { '@keywords': 'keyword',
+                             '@default': 'identifier' }
                 }],
+
+                // whitespace
                 { include: '@whitespace' },
+
+                // delimiters and operators
+                [/[{}()]/, '@brackets'],
+                [/[;,.]/, 'delimiter'],
+                [/@symbols/, { cases: {'@operators': 'operator',
+                                        '@default': '' }}],
+
+                // numbers
+                [/\d+/, 'number'],
+
+                // strings: recover on non-terminated strings
+                [/"([^"\\]|\\.)*$/, 'string.invalid' ],  // non-teminated string
+                [/"/,  'string', '@string."' ],
             ],
+
             whitespace: [
                 [/[ \t\r\n]+/, 'white'],
-                [/\/\*/,       'comment', '@comment'],
+                [/\/\*/,       'comment', '@comment' ],
                 [/\/\/.*$/,    'comment'],
             ],
+
             comment: [
                 [/[^\/*]+/, 'comment' ],
+                // [/\/\*/, 'comment', '@push' ],    // nested comment not allowed :-(
+                [/\/\*/,    'comment.invalid' ],
                 ["\\*/",    'comment', '@pop'  ],
                 [/[\/*]/,   'comment' ]
             ],
+
+            string: [
+                [/[^\\"]+/, 'string'],
+                [/@escapes/, 'string.escape'],
+                [/\\./,      'string.escape.invalid'],
+                [/"/,     { cases: { '$#==$S2' : { token: 'string', next: '@pop' },
+                                    '@default': 'string' }} ]
+            ],
+
         }
     };
 
