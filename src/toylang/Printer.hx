@@ -151,6 +151,15 @@ class Printer {
             case EContinue:
                 "continue";
 
+            case EBinop(op, eleft, eright):
+                var buf = new StringBuf();
+                buf.add(printExpr(eleft, level));
+                buf.add(" ");
+                buf.add(printBinop(op));
+                buf.add(" ");
+                buf.add(printExpr(eright, level));
+                buf.toString();
+
             case EReturn(e):
                 if (e == null)
                     "return";
@@ -219,6 +228,12 @@ class Printer {
                 buf.add(" => ");
                 buf.add(printExpr(expr, level));
                 buf.toString();
+        }
+    }
+
+    function printBinop(op:Binop):String {
+        return switch (op) {
+            case OpAssign: "=";
         }
     }
 
