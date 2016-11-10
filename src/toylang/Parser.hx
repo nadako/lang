@@ -50,16 +50,25 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                 decl.kind = DFunction(f.fun);
                 decl;
 
-            case [{kind: TkKeyword(KwdClass), pos: pmin}, {kind: TkIdent(name)}, {kind: TkBraceOpen}, fields = parseRepeat(parseClassField), {kind: TkBraceClose}]:
+            case [{kind: TkKeyword(KwdClass), pos: pmin}, {kind: TkIdent(name)}, params = parseTypeParams(), {kind: TkBraceOpen}, fields = parseRepeat(parseClassField), {kind: TkBraceClose}]:
                 var decl = new Decl();
                 decl.name = name;
                 decl.pos = Position.union(pmin, last.pos);
                 decl.kind = DClass({
                     var cls = new ClassDecl();
                     cls.fields = fields;
+                    cls.params = params;
                     cls;
                 });
                 decl;
+        }
+    }
+
+    function parseTypeParams():Array<TypeParamDecl> {
+        return switch stream {
+            case [{kind: TkLt}, params = separated(TkComma, parseIdent), {kind: TkGt}]:
+                [for (p in params) new TypeParamDecl(p)];
+            case _: [];
         }
     }
 

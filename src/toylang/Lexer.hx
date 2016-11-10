@@ -54,6 +54,8 @@ class Lexer extends hxparse.Lexer implements hxparse.RuleBuilder {
         "=" => mk(lexer, TkEqual),
         "\\(" => mk(lexer, TkParenOpen),
         "\\)" => mk(lexer, TkParenClose),
+        "<" => mk(lexer, TkLt),
+        ">" => mk(lexer, TkGt),
         "\"" => {
             buf = new StringBuf();
             var pmin = lexer.curPos();

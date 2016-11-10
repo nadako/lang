@@ -28,6 +28,8 @@ enum TokenKind {
     TkSemicolon;
     TkArrow;
     TkEqual;
+    TkLt;
+    TkGt;
     TkBackslash;
     TkEof;
 }
@@ -79,8 +81,17 @@ class FunctionArg {
     }
 }
 
+class TypeParamDecl {
+    public var name:String;
+
+    public function new(name) {
+        this.name = name;
+    }
+}
+
 class ClassDecl {
     public var fields:Array<Field>;
+    public var params:Array<TypeParamDecl>;
     public function new() {}
 }
 

@@ -26,6 +26,7 @@ class Printer {
         var buf = new StringBuf();
         buf.add("class ");
         buf.add(decl.name);
+        buf.add(printTypeParams(cls.params));
         buf.add(" {");
         var fst = true;
         for (field in cls.fields) {
@@ -45,6 +46,12 @@ class Printer {
         }
         buf.add("}");
         return buf.toString();
+    }
+
+    function printTypeParams(params:Array<TypeParamDecl>):String {
+        return
+            if (params.length == 0) ""
+            else "<" + [for (p in params) p.name].join(", ") + ">";
     }
 
     public function printFunction(fun:FunctionDecl, level:Int):String {
