@@ -14,6 +14,14 @@ class TBaseDecl {
 
 class TClassDecl extends TBaseDecl {
     public var fields:Array<TClassField>;
+
+    public function getField(name:String):TClassField {
+        for (f in fields) {
+            if (f.name == name)
+                return f;
+        }
+        return null;
+    }
 }
 
 class TFunctionDecl extends TBaseDecl {
@@ -49,6 +57,7 @@ enum Type {
     TInst(c:TClassDecl);
     TFun(args:Array<TFunctionArg>, ret:Type);
     TTuple(types:Array<Type>);
+    TConst(t:Type);
 }
 
 class Monomorph {

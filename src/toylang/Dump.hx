@@ -142,6 +142,8 @@ class Dump {
         return switch (t) {
             case TTuple(types):
                 'TTuple(${types.map(dumpType).join(", ")})';
+            case TConst(t):
+                'TConst(${dumpType(t)})';
             case TInst(c):
                 'TInst(${dumpPath(c.module, c.name)})';
             case TFun(args,ret):
@@ -174,6 +176,12 @@ class Dump {
                 b.add(types.map(typeToString).join(", "));
                 if (types.length == 1)
                     b.add(",");
+                b.add(")");
+                b.toString();
+            case TConst(t):
+                var b = new StringBuf();
+                b.add("CONST(");
+                b.add(typeToString(t));
                 b.add(")");
                 b.toString();
             case TFun(args, ret):

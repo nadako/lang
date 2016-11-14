@@ -158,6 +158,9 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                         unexpected();
                 }
 
+            case [{kind: TkKeyword(KwdConst)}, {kind: TkParenOpen}, type = parseSyntaxType(), {kind: TkParenClose}]:
+                TConst(type);
+
             // otherwise try parsing simple dot path
             case [path = parseDotPath([])]:
                 var name = path.pop();

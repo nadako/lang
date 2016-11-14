@@ -38,6 +38,7 @@ enum Keyword {
     KwdFunction;
     KwdClass;
     KwdVar;
+    KwdConst;
     KwdIf;
     KwdElse;
     KwdWhile;
@@ -116,6 +117,7 @@ enum SyntaxType {
     TPath(module:Array<String>, name:String);
     TTuple(types:Array<SyntaxType>);
     TFunction(args:Array<FunctionArg>, returnType:SyntaxType);
+    TConst(type:SyntaxType);
 }
 
 class Expr {

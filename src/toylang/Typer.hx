@@ -29,6 +29,7 @@ enum TyperErrorMessage {
     InsufficientTupleElements(remainingTypes:Array<Type>);
     TooManyTupleElements;
     FieldNotFound(type:Type, name:String);
+    Immutable;
 }
 
 class Typer {
@@ -73,6 +74,9 @@ class Typer {
 
             case TTuple(types):
                 TTuple(types.map(typeType));
+
+            case TConst(t):
+                TConst(typeType(t));
 
             case TFunction(args, ret):
                 TFun([for (a in args) new TFunctionArg(a.name, typeType(a.type))], typeType(ret));
@@ -199,6 +203,11 @@ class Typer {
                 var left = typeExpr(left);
                 var right = typeExpr(right);
                 unifyThrow(right.type, left.type, e.pos);
+                switch (left.kind) {
+                    case TField({type: TConst(_)}, _):
+                        throw new TyperError(Immutable, e.pos);
+                    case _:
+                }
                 new TExpr(TBinop(OpAssign, left, right), left.type, e.pos);
 
             case ETuple(exprs):
@@ -206,12 +215,19 @@ class Typer {
 
             case EField(eobj, name):
                 var eobj = typeExpr(eobj);
+                inline function getField(cls) {
+                    var field = cls.getField(name);
+                    if (field == null)
+                        throw new TyperError(FieldNotFound(eobj.type, name), e.pos);
+                    return field;
+                }
                 switch (eobj.type) {
                     case TInst(cls):
-                        var field = Lambda.find(cls.fields, function(f) return f.name == name);
-                        if (field == null)
-                            throw new TyperError(FieldNotFound(eobj.type, name), e.pos);
+                        var field = getField(cls);
                         return new TExpr(TField(eobj, FClassField(cls, field)), field.type, e.pos);
+                    case TConst(TInst(cls)):
+                        var field = getField(cls);
+                        return new TExpr(TField(eobj, FClassField(cls, field)), TConst(field.type), e.pos);
                     default:
                         throw "todo";
                 }
@@ -409,6 +425,10 @@ class Typer {
                 } else {
                     unify(a, mb.type);
                 }
+            case [TConst(a), TConst(b)]:
+                unify(a, b);
+            case [a, TConst(b)]:
+                unify(a, b); // allow assigning from non-const to const
             case [TInst(ca), TInst(cb)]:
                 ca == cb;
             case [TTuple(ta), TTuple(tb)] if (ta.length == tb.length):

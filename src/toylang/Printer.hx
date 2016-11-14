@@ -239,6 +239,13 @@ class Printer {
 
     public function printSyntaxType(type:SyntaxType):String {
         return switch (type) {
+            case TConst(type):
+                var b = new StringBuf();
+                b.add("const(");
+                b.add(printSyntaxType(type));
+                b.add(")");
+                b.toString();
+
             case TPath(module, name):
                 module.concat([name]).join(".");
 
