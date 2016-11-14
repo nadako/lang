@@ -162,9 +162,8 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                 TConst(type);
 
             // otherwise try parsing simple dot path
-            case [path = parseDotPath([])]:
-                var name = path.pop();
-                TPath(path, name);
+            case [path = parseTypePath()]:
+                TPath(path);
         }
     }
 
@@ -181,11 +180,11 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                     // if there's a dot - it's a type path
                     case [{kind: TkDot}, path = parseDotPath([ident])]:
                         var name = path.pop();
-                        new FunctionArg("", TPath(path, name));
+                        new FunctionArg("", TPath(new TypePath(path, name)));
 
                     // otherwise - it's a toplevel type path (e.g. Int)
                     case _:
-                        new FunctionArg("", TPath([], ident));
+                        new FunctionArg("", TPath(new TypePath([], ident)));
                 }
 
             // if there was no identifier - try parsing a type
@@ -207,6 +206,12 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
             }
         }
         return acc;
+    }
+
+    function parseTypePath():TypePath {
+        var path = parseDotPath([]);
+        var name = path.pop();
+        return new TypePath(path, name);
     }
 
     function parseIdent():String {
@@ -305,6 +310,9 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
 
             case [{kind: TkKeyword(KwdReturn), pos: pmin}, e = parseOptional(parseExpr)]:
                 mk(EReturn(e), Position.union(pmin, last.pos));
+
+            case [{kind: TkKeyword(KwdNew), pos: pmin}, path = parseExpect(parseTypePath)]:
+                mk(ENew(path), Position.union(pmin, last.pos));
 
             case [v = parseVar()]:
                 mk(EVar(v.name, v.type, v.initial), v.pos);

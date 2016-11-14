@@ -45,6 +45,7 @@ enum Keyword {
     KwdBreak;
     KwdContinue;
     KwdReturn;
+    KwdNew;
 }
 
 enum Literal {
@@ -114,10 +115,20 @@ enum FieldKind {
 }
 
 enum SyntaxType {
-    TPath(module:Array<String>, name:String);
+    TPath(path:TypePath);
     TTuple(types:Array<SyntaxType>);
     TFunction(args:Array<FunctionArg>, returnType:SyntaxType);
     TConst(type:SyntaxType);
+}
+
+class TypePath {
+    public var module:Array<String>;
+    public var name:String;
+
+    public function new(module, name) {
+        this.module = module;
+        this.name = name;
+    }
 }
 
 class Expr {
@@ -138,6 +149,7 @@ enum ExprKind {
     EVar(name:String, type:Null<SyntaxType>, initial:Null<Expr>);
     ETuple(exprs:Array<Expr>);
     EParens(expr:Expr);
+    ENew(path:Null<TypePath>);
     EIf(cond:Expr, then:Expr, els:Null<Expr>);
     EArrowFunction(args:Array<FunctionArg>, ret:Null<SyntaxType>, expr:Expr);
     EWhile(cond:Expr, body:Expr);

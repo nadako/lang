@@ -42,10 +42,10 @@ class Typer {
     public function new() {
         localsStack = new GenericStack();
 
-        tVoid = typeType(TPath([], "Void"));
-        tString = typeType(TPath([], "String"));
-        tInt = typeType(TPath([], "Int"));
-        tBool = typeType(TPath([], "Bool"));
+        tVoid = typeType(TPath(new TypePath([], "Void")));
+        tString = typeType(TPath(new TypePath([], "String")));
+        tInt = typeType(TPath(new TypePath([], "Int")));
+        tBool = typeType(TPath(new TypePath([], "Bool")));
 
         var locals = pushLocals();
         locals["trace"] = new TVar("trace", TFun([new TFunctionArg("str", tString)], tVoid));
@@ -65,8 +65,8 @@ class Typer {
         if (t == null)
             return mkMono();
         return switch (t) {
-            case TPath(module, name):
-                var decl = loadType(module, name);
+            case TPath(path):
+                var decl = loadType(path.module, path.name);
                 switch (decl) {
                     case TDClass(cl): TInst(cl);
                     case TDFunction(_): throw false;
@@ -221,7 +221,7 @@ class Typer {
                         throw new TyperError(FieldNotFound(eobj.type, name), e.pos);
                     return field;
                 }
-                switch (eobj.type) {
+                switch (follow(eobj.type)) {
                     case TInst(cls):
                         var field = getField(cls);
                         return new TExpr(TField(eobj, FClassField(cls, field)), field.type, e.pos);
@@ -250,6 +250,13 @@ class Typer {
 
             case EArrowFunction(args, ret, expr):
                 typeFunctionExpr(args, ret, expr, e.pos);
+
+            case ENew(path):
+                var tdecl = loadType(path.module, path.name);
+                switch (tdecl) {
+                    case TDClass(cl): new TExpr(TNew(cl), TInst(cl), e.pos);
+                    case TDFunction(_): throw false;
+                }
         }
     }
 
@@ -429,6 +436,7 @@ class Typer {
                 unify(a, b);
             case [a, TConst(b)]:
                 unify(a, b); // allow assigning from non-const to const
+            // TODO: allow copy-assigning from const to non-const (e.g. basic types like Int)
             case [TInst(ca), TInst(cb)]:
                 ca == cb;
             case [TTuple(ta), TTuple(tb)] if (ta.length == tb.length):

@@ -63,6 +63,10 @@ class Dump {
                     b.add("\n");
                 }
 
+            case TNew(c):
+                indent(level + 1);
+                b.add(c.module.concat([c.name]).join("."));
+
             case TCall(e, args):
                 b.add(dumpExpr(e, level + 1));
                 b.add("\n");

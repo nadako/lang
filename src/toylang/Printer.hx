@@ -228,6 +228,16 @@ class Printer {
                 buf.add(" => ");
                 buf.add(printExpr(expr, level));
                 buf.toString();
+
+            case ENew(path):
+                var buf = new StringBuf();
+                buf.add("new ");
+                if (path == null) {
+                    throw "TODO";
+                } else {
+                    buf.add(printTypePath(path));
+                }
+                buf.toString();
         }
     }
 
@@ -246,8 +256,8 @@ class Printer {
                 b.add(")");
                 b.toString();
 
-            case TPath(module, name):
-                module.concat([name]).join(".");
+            case TPath(path):
+                printTypePath(path);
 
             case TFunction(args, ret):
                 var b = new StringBuf();
@@ -264,5 +274,9 @@ class Printer {
                     case _: '(${types.map(printSyntaxType).join(", ")})';
                 }
         }
+    }
+
+    inline function printTypePath(path:TypePath):String {
+        return path.module.concat([path.name]).join(".");
     }
 }
