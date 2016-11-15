@@ -106,8 +106,13 @@ enum TExprKind {
     TContinue;
     TReturn(e:Null<TExpr>);
     TFunction(args:Array<TFunctionArg>, ret:Type, expr:TExpr);
-    TBinop(op:Binop, left:TExpr, right:TExpr);
+    TAssign(target:AssignTarget, value:TExpr);
     TNew(cls:TClassDecl);
+}
+
+enum AssignTarget {
+    ATVar(v:TVar);
+    ATField(obj:TExpr, f:FieldAccess);
 }
 
 enum TLiteral {

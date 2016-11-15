@@ -30,6 +30,7 @@ enum TyperErrorMessage {
     TooManyTupleElements;
     FieldNotFound(type:Type, name:String);
     Immutable;
+    InvalidAssignment;
 }
 
 class Typer {
@@ -203,13 +204,19 @@ class Typer {
             case EBinop(OpAssign, left, right):
                 var left = typeExpr(left);
                 var right = typeExpr(right);
+                var kind =
+                    switch (left.kind) {
+                        case TLocal(v):
+                            TAssign(ATVar(v), right);
+                        case TField(obj, f):
+                            if (obj.type.match(TConst(_)))
+                                throw new TyperError(Immutable, e.pos);
+                            TAssign(ATField(obj, f), right);
+                        default:
+                            throw new TyperError(InvalidAssignment, e.pos);
+                    }
                 unifyThrow(right.type, left.type, e.pos);
-                switch (left.kind) {
-                    case TField({type: TConst(_)}, _):
-                        throw new TyperError(Immutable, e.pos);
-                    case _:
-                }
-                new TExpr(TBinop(OpAssign, left, right), left.type, e.pos);
+                new TExpr(kind, left.type, e.pos);
 
             case ETuple(exprs):
                 typeTuple(exprs, e.pos);
