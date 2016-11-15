@@ -29,7 +29,7 @@ class Dump {
                             b.add("\n");
                             if (field.expr != null)
                                 b.add(dumpExpr(field.expr, 2));
-                        case FMethod:
+                        case FMethod(_):
                             b.add("\tfunction " + field.name + " : ");
                             b.add(dumpType(field.type));
                             b.add("\n");

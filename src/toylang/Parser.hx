@@ -74,6 +74,11 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
 
     function parseClassField():Field {
         return switch stream {
+            case [{kind: TkKeyword(KwdConst)}, f = parseFunction()]:
+                var f = new Field(f.fun.name, FFun(f.fun), f.pos);
+                f.modifiers.push(FMConst);
+                return f;
+
             case [f = parseFunction()]:
                 new Field(f.fun.name, FFun(f.fun), f.pos);
 

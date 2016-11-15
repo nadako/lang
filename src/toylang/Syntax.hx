@@ -102,12 +102,18 @@ class Field {
     public var name:String;
     public var pos:Position;
     public var kind:FieldKind;
+    public var modifiers:Array<FieldModifier>;
 
     public function new(name, kind, pos) {
         this.name = name;
         this.kind = kind;
         this.pos = pos;
+        modifiers = [];
     }
+}
+
+enum FieldModifier {
+    FMConst;
 }
 
 enum FieldKind {

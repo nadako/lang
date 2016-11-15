@@ -57,7 +57,7 @@ class TClassField {
 
 enum TClassFieldKind {
     FVar;
-    FMethod;
+    FMethod(isConst:Bool);
 }
 
 enum Type {

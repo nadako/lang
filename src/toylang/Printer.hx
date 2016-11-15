@@ -35,6 +35,12 @@ class Printer {
                 buf.add("\n");
             }
             buf.add(indent(level + 1));
+            for (mod in field.modifiers) {
+                buf.add(switch (mod) {
+                    case FMConst: "const";
+                });
+                buf.add(" ");
+            }
             switch (field.kind) {
                 case FFun(fun):
                     buf.add(printFunction(fun, level + 1));

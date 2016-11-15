@@ -148,10 +148,13 @@ class Typer {
                         f.expr = typeExpr(expr);
                     fields.push(f);
                 case FFun(fun):
-                    thisStack.add(TInst(cls));
+                    var isConst = field.modifiers.indexOf(FMConst) != -1;
+                    var thisType = TInst(cls);
+                    if (isConst) thisType = TConst(thisType);
+                    thisStack.add(thisType);
                     var tfun = typeFunctionDecl(fun, field.pos);
                     thisStack.pop();
-                    var f = new TClassField(field.name, FMethod, TFun(tfun.args, tfun.ret), field.pos);
+                    var f = new TClassField(field.name, FMethod(isConst), TFun(tfun.args, tfun.ret), field.pos);
                     if (tfun.expr != null)
                         f.expr = tfun.expr;
                     fields.push(f);
@@ -251,7 +254,7 @@ class Typer {
                     case FVar:
                         if (isConst) type = TConst(type);
                         TVarField(eobj, FClassField(cls, field));
-                    case FMethod:
+                    case FMethod(_):
                         TMethodClosure(eobj, FClassField(cls, field));
                 }
                 new TExpr(kind, type, e.pos);
@@ -360,8 +363,16 @@ class Typer {
                 throw new TyperError(TypeIsNotCallable(other), pos);
         }
         var kind = switch (eobj.kind) {
-            case TMethodClosure(e, f): TMethodCall(e, f, typedArgs);
-            default: TCall(eobj, typedArgs);
+            case TMethodClosure(e, f):
+                switch (f) {
+                    case FClassField(_, {kind: FMethod(false)}):
+                        if (follow(e.type).match(TConst(_)))
+                            throw new TyperError(Immutable, pos);
+                    default:
+                }
+                TMethodCall(e, f, typedArgs);
+            default:
+                TCall(eobj, typedArgs);
         }
         return new TExpr(kind, returnType, pos);
     }
