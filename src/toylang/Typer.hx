@@ -141,8 +141,9 @@ class Typer {
             switch (field.kind) {
                 case FVar(type, expr):
                     fields.push(new TClassField(field.name, typeType(type), field.pos));
-                case FFun(_):
-                    throw "TODO";
+                case FFun(fun):
+                    var tfun = typeFunctionDecl(fun, field.pos);
+                    fields.push(new TClassField(field.name, TFun(tfun.args, tfun.ret), field.pos));
             }
         }
         cls.fields = fields;
