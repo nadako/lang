@@ -15,6 +15,11 @@ in my toy language (in no particular order):
    can provide required behaviour to any existing type without run-time overhead (via
    static dispatch).
 
+ * "Proper" OOP. Not a fan of it personally, but it's required for languages interop
+   and some people still do a lot of OOP. By "proper" i mean: abstract classes, protected fields,
+   also everything final/sealed (non-inheritable, non-virtual) by default, requiring a keyword
+   to enable subclassing (similar to Kotlin's "open").
+
  * Tuples. Yes, please! Also, with matching and inlining support.
 
  * Flexible variance settings or even inference, so they are not always invariant like in Haxe.
