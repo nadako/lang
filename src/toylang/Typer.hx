@@ -235,29 +235,7 @@ class Typer {
 
             case EField(eobj, name):
                 var eobj = typeExpr(eobj);
-                var cls, isConst;
-                switch (follow(eobj.type)) {
-                    case TInst(c):
-                        cls = c;
-                        isConst = false;
-                    case TConst(TInst(c)):
-                        cls = c;
-                        isConst = true;
-                    default:
-                        throw "todo";
-                }
-                var field = cls.getField(name);
-                if (field == null)
-                    throw new TyperError(FieldNotFound(eobj.type, name), e.pos);
-                var type = field.type;
-                var kind = switch (field.kind) {
-                    case FVar:
-                        if (isConst) type = TConst(type);
-                        TVarField(eobj, FClassField(cls, field));
-                    case FMethod(_):
-                        TMethodClosure(eobj, FClassField(cls, field));
-                }
-                new TExpr(kind, type, e.pos);
+                typeField(eobj, name, e.pos);
 
             case EIf(econd, ethen, eelse):
                 typeIf(econd, ethen, eelse, e.pos);
@@ -285,6 +263,32 @@ class Typer {
                     case TDFunction(_): throw false;
                 }
         }
+    }
+
+    function typeField(eobj:TExpr, name:String, pos:Position):TExpr {
+        var cls, isConst;
+        switch (follow(eobj.type)) {
+            case TInst(c):
+                cls = c;
+                isConst = false;
+            case TConst(TInst(c)):
+                cls = c;
+                isConst = true;
+            default:
+                throw "todo";
+        }
+        var field = cls.getField(name);
+        if (field == null)
+            throw new TyperError(FieldNotFound(eobj.type, name), pos);
+        var type = field.type;
+        var kind = switch (field.kind) {
+            case FVar:
+                if (isConst) type = TConst(type);
+                TVarField(eobj, FClassField(cls, field));
+            case FMethod(_):
+                TMethodClosure(eobj, FClassField(cls, field));
+        }
+        return new TExpr(kind, type, pos);
     }
 
     function typeFunctionExpr(args:Array<FunctionArg>, ret:Null<SyntaxType>, expr:Expr, pos:Position):TExpr {
@@ -405,8 +409,14 @@ class Typer {
             }
         } else {
             var local = findLocal(ident);
-            if (local != null)
+            if (local != null) {
                 return new TExpr(TLocal(local), local.type, pos);
+            } else {
+                var t = thisStack.first();
+                if (t != null) {
+                    return typeField(new TExpr(TThis, t, pos), ident, pos);
+                }
+            }
         }
 
         throw new TyperError(UnresolvedIdentifier(ident), pos);
