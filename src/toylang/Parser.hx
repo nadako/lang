@@ -242,6 +242,9 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
             case [{kind: TkIdent(ident), pos: pmin}]:
                 parseExprNext(mk(EIdent(ident), last.pos));
 
+            case [{kind: TkKeyword(KwdThis), pos: pmin}]:
+                parseExprNext(mk(EIdent("this"), last.pos));
+
             // opening paren can lead to different things: single expr in parens or a tuple
             case [{kind: TkParenOpen, pos: pmin}]:
                 switch stream {

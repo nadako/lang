@@ -44,6 +44,7 @@ class TClassField {
     public var name:String;
     public var kind:TClassFieldKind;
     public var type:Type;
+    public var expr:TExpr;
     public var pos:Position;
 
     public function new(name, kind, type, pos) {
@@ -100,6 +101,7 @@ class TVar {
 }
 
 enum TExprKind {
+    TThis;
     TBlock(exprs:Array<TExpr>);
     TTuple(exprs:Array<TExpr>);
     TVar(v:TVar, einitial:Null<TExpr>);

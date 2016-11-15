@@ -46,6 +46,7 @@ enum Keyword {
     KwdContinue;
     KwdReturn;
     KwdNew;
+    KwdThis;
 }
 
 enum Literal {

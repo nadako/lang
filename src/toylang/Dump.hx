@@ -20,6 +20,23 @@ class Dump {
 
             case TDClass(cls):
                 b.add(dumpPath(cls.module, cls.name));
+                b.add("\n");
+                for (field in cls.fields) {
+                    switch (field.kind) {
+                        case FVar:
+                            b.add("\tvar " + field.name + " : ");
+                            b.add(dumpType(field.type));
+                            b.add("\n");
+                            if (field.expr != null)
+                                b.add(dumpExpr(field.expr, 2));
+                        case FMethod:
+                            b.add("\tfunction " + field.name + " : ");
+                            b.add(dumpType(field.type));
+                            b.add("\n");
+                            if (field.expr != null)
+                                b.add(dumpExpr(field.expr, 2));
+                    }
+                }
         }
         return b.toString();
     }
@@ -93,6 +110,7 @@ class Dump {
                     b.add("\n");
                 }
 
+            case TThis:
             case TLocal(v):
             case TLiteral(_):
             case TBreak:

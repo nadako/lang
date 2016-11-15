@@ -35,6 +35,7 @@ enum TyperErrorMessage {
 
 class Typer {
     var localsStack:GenericStack<Map<String,TVar>>;
+    var thisStack:GenericStack<Type>;
     var tVoid:Type;
     var tString:Type;
     var tInt:Type;
@@ -42,6 +43,7 @@ class Typer {
 
     public function new() {
         localsStack = new GenericStack();
+        thisStack = new GenericStack();
 
         tVoid = typeType(TPath(new TypePath([], "Void")));
         tString = typeType(TPath(new TypePath([], "String")));
@@ -137,17 +139,24 @@ class Typer {
         cls.module = [];
         cls.name = name;
         cls.pos = pos;
-        var fields = [];
+        var fields = cls.fields = [];
         for (field in classDecl.fields) {
             switch (field.kind) {
                 case FVar(type, expr):
-                    fields.push(new TClassField(field.name, FVar, typeType(type), field.pos));
+                    var f = new TClassField(field.name, FVar, typeType(type), field.pos);
+                    if (expr != null)
+                        f.expr = typeExpr(expr);
+                    fields.push(f);
                 case FFun(fun):
+                    thisStack.add(TInst(cls));
                     var tfun = typeFunctionDecl(fun, field.pos);
-                    fields.push(new TClassField(field.name, FMethod, TFun(tfun.args, tfun.ret), field.pos));
+                    thisStack.pop();
+                    var f = new TClassField(field.name, FMethod, TFun(tfun.args, tfun.ret), field.pos);
+                    if (tfun.expr != null)
+                        f.expr = tfun.expr;
+                    fields.push(f);
             }
         }
-        cls.fields = fields;
         return decl;
     }
 
@@ -378,9 +387,16 @@ class Typer {
     }
 
     function resolveIdent(ident:String, pos:Position):TExpr {
-        var local = findLocal(ident);
-        if (local != null)
-            return new TExpr(TLocal(local), local.type, pos);
+        if (ident == "this") {
+            var t = thisStack.first();
+            if (t != null) {
+                return new TExpr(TThis, t, pos);
+            }
+        } else {
+            var local = findLocal(ident);
+            if (local != null)
+                return new TExpr(TLocal(local), local.type, pos);
+        }
 
         throw new TyperError(UnresolvedIdentifier(ident), pos);
     }
