@@ -42,14 +42,21 @@ class TFunctionArg {
 
 class TClassField {
     public var name:String;
-    public var pos:Position;
+    public var kind:TClassFieldKind;
     public var type:Type;
+    public var pos:Position;
 
-    public function new(name, type, pos) {
+    public function new(name, kind, type, pos) {
         this.name = name;
+        this.kind = kind;
         this.type = type;
         this.pos = pos;
     }
+}
+
+enum TClassFieldKind {
+    FVar;
+    FMethod;
 }
 
 enum Type {
@@ -97,8 +104,10 @@ enum TExprKind {
     TTuple(exprs:Array<TExpr>);
     TVar(v:TVar, einitial:Null<TExpr>);
     TLocal(v:TVar);
-    TField(e:TExpr, f:FieldAccess);
+    TMethodClosure(e:TExpr, f:FieldAccess);
+    TVarField(e:TExpr, f:FieldAccess);
     TCall(e:TExpr, args:Array<TExpr>);
+    TMethodCall(eobj:TExpr, f:FieldAccess, args:Array<TExpr>);
     TLiteral(l:TLiteral);
     TIf(econd:TExpr, ethen:TExpr, eelse:Null<TExpr>);
     TWhile(econd:TExpr, ebody:TExpr);

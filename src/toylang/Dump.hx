@@ -67,6 +67,22 @@ class Dump {
                 indent(level + 1);
                 b.add(c.module.concat([c.name]).join("."));
 
+            case TMethodCall(e, f, args):
+                b.add(dumpExpr(e, level + 1));
+                b.add("\n");
+                indent(level + 1);
+                switch (f) {
+                    case FClassField(cl, f):
+                        b.add(f.name);
+                }
+                b.add("\n");
+                indent(level + 1);
+                b.add("-ARGS-\n");
+                for (e in args) {
+                    b.add(dumpExpr(e, level + 1));
+                    b.add("\n");
+                }
+
             case TCall(e, args):
                 b.add(dumpExpr(e, level + 1));
                 b.add("\n");
@@ -127,7 +143,7 @@ class Dump {
                 b.add("-BODY-\n");
                 b.add(dumpExpr(body, level + 1));
 
-            case TField(e, fa):
+            case TMethodClosure(e, fa) | TVarField(e, fa):
                 b.add(dumpExpr(e, level + 1));
                 b.add("\n");
                 indent(level + 1);
