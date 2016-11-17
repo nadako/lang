@@ -109,6 +109,16 @@ class CfgBuilder {
                 throw "var declaration is not allowed in a value place";
             case TWhile(_, _):
                 throw "while loop is not allowed in a value place";
+            case TBlock([]):
+                // this shouldn't happen
+                throw "empty blocks are not allowed in a value place";
+            case TBlock([e]):
+                value(bb, e);
+            case TBlock(el):
+                var last = el.pop();
+                for (e in el)
+                    bb = blockElement(bb, e);
+                value(bb, last);
             case TLiteral(_) | TLocal(_) | TThis:
                 {bb: bb, expr: e};
             case TIf(econd, ethen, eelse):
