@@ -312,15 +312,15 @@ class CfgBuilder {
     public static function makeVisJsGraph(root:BasicBlock) {
         var blocks = [];
         var edges = [];
-        function walk(bb:BasicBlock) {
-            blocks.push({id: bb.id, label: '<${bb.id}>\n' + bb.elements.map(texprToString).join("\n")});
+        function walk(bb:BasicBlock, level:Int) {
+            blocks.push({id: bb.id, label: '<${bb.id}>\n' + bb.elements.map(texprToString).join("\n"), level: level});
             for (edge in bb.edges) {
                 edges.push({from: bb.id, to: edge.to.id, label: edge.label, arrows: "to"});
                 if (!Lambda.exists(blocks, function(b) return b.id == edge.to.id))
-                    walk(edge.to);
+                    walk(edge.to, level + 1);
             }
         }
-        walk(root);
+        walk(root, 0);
 
         return {
             nodes: blocks,
