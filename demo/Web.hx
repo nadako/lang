@@ -83,6 +83,9 @@ class Web {
                             enabled: true,
                             sortMethod: "directed"
                         }
+                    },
+                    edges: {
+                        smooth: {type: "continuous"}
                     }
                 };
                 network = new VisNetwork(cfg, data, options);
