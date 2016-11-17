@@ -1,4 +1,5 @@
 function main() {
-    var i = "hi";
-    i;
+    var b = true;
+    if (b) "hi" else if (b) "bye" else "omg";
+    b = false;
 }

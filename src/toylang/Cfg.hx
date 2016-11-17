@@ -28,6 +28,10 @@ class BasicBlock {
     public inline function addElement(e:TExpr) {
         elements.push(e);
     }
+
+    public inline function addEdge(to:BasicBlock, label:String) {
+        edges.push(new Edge(to, label));
+    }
 }
 
 class CfgBuilder {
@@ -63,9 +67,35 @@ class CfgBuilder {
                     assignVar(bb, v, r.expr, e.pos);
                 }
                 bb;
-            case TLocal(v):
+            case TLiteral(_) | TLocal(_):
                 bb.addElement(e);
                 bb;
+            case TAssign(ATVar(v), evalue):
+                var r = value(bb, evalue);
+                bb = r.bb;
+                assignVar(bb, v, r.expr, e.pos);
+                bb;
+            case TIf(econd, ethen, eelse):
+                var r = value(bb, econd);
+                r.bb.addElement(r.expr);
+
+                var bbNext = new BasicBlock();
+
+                var bbThen = new BasicBlock();
+                r.bb.addEdge(bbThen, "then");
+                bbThen = block(bbThen, ethen);
+                bbThen.addEdge(bbNext, "next");
+
+                if (eelse == null) {
+                    r.bb.addEdge(bbNext, "else");
+                } else {
+                    var bbElse = new BasicBlock();
+                    r.bb.addEdge(bbElse, "else");
+                    bbElse = block(bbElse, eelse);
+                    bbElse.addEdge(bbNext, "next");
+                }
+
+                bbNext;
             default:
                 throw "todo " + e;
         }
@@ -117,6 +147,8 @@ class CfgBuilder {
                 '${v.name} = ${texprToString(e)}';
             case TLiteral(LInt(i)):
                 '$i';
+            case TLiteral(LBool(b)):
+                if (b) "true" else "false";
             case TLiteral(LString(s)):
                 '"${Lexer.escapeString(s)}"';
             default:
