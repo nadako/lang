@@ -86,6 +86,12 @@ class CfgBuilder {
                 bb.addElement(e);
                 bb;
 
+            case TNew(_):
+                // right now, we don't support constructors,
+                // so this is a no-sideeffect expr and could actually be not added
+                bb.addElement(e);
+                bb;
+
             case TAssign(ATVar(v), evalue):
                 var r = value(bb, evalue);
                 bb = r.bb;
@@ -184,6 +190,11 @@ class CfgBuilder {
                 value(bb, last);
 
             case TLiteral(_) | TLocal(_) | TThis:
+                {bb: bb, expr: e};
+
+            case TNew(_):
+                // right now we don't support constructors, so no need to
+                // think about constructor arguments :)
                 {bb: bb, expr: e};
 
             case TMethodClosure(eobj, f):
@@ -310,6 +321,9 @@ class CfgBuilder {
                     case FClassField(_, f): f.name;
                 }
                 'METHODCLOSURE<${texprToString(e)}.${fieldName}>';
+            case TNew(cl):
+                var path = cl.module.concat([cl.name]).join(".");
+                'new $path';
             default:
                 throw "todo" + e;
         }
