@@ -98,9 +98,28 @@ class CfgBuilder {
                 }
 
                 bbNext;
+
+            case TCall(eobj, args):
+                var r = call(bb, eobj, args, e.type, e.pos);
+                r.bb.addElement(r.expr);
+                r.bb;
+
             default:
                 throw "todo " + e;
         }
+    }
+
+    function call(bb:BasicBlock, eobj:TExpr, args:Array<TExpr>, ret:Type, pos:Position):{bb:BasicBlock, expr:TExpr} {
+        var r = value(bb, eobj);
+        eobj = r.expr;
+        bb = r.bb;
+        var valueArgs = [];
+        for (e in args) {
+            var r = value(bb, e);
+            bb = r.bb;
+            valueArgs.push(r.expr);
+        }
+        return {bb: bb, expr: new TExpr(TCall(eobj, valueArgs), ret, pos)}
     }
 
     function value(bb:BasicBlock, e:TExpr):{bb:BasicBlock, expr:TExpr} {
@@ -121,6 +140,8 @@ class CfgBuilder {
                 value(bb, last);
             case TLiteral(_) | TLocal(_) | TThis:
                 {bb: bb, expr: e};
+            case TCall(eobj, args):
+                call(bb, eobj, args, e.type, e.pos);
             case TIf(econd, ethen, eelse):
                 if (eelse == null)
                     throw "if in a value place must have else branch";
@@ -196,6 +217,8 @@ class CfgBuilder {
                 if (b) "true" else "false";
             case TLiteral(LString(s)):
                 '"${Lexer.escapeString(s)}"';
+            case TCall(eobj, args):
+                '${texprToString(eobj)}(${args.map(texprToString).join(", ")})';
             default:
                 throw "todo" + e;
         }
