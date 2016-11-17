@@ -1,5 +1,10 @@
-function main() {
-    var b = true;
-    if (b) "hi" else if (b) "bye" else "omg";
-    b = false;
+function main(a:Bool) {
+    var b = false;
+    var v =
+        if (a)
+            1
+        else if (b)
+            2;
+        else
+            3;
 }

@@ -36,9 +36,11 @@ class BasicBlock {
 
 class CfgBuilder {
     var typer:Typer;
+    var tmpCount:Int;
 
     public function new(typer:Typer) {
         this.typer = typer;
+        tmpCount = 0;
     }
 
     public function build(e:TExpr):BasicBlock {
@@ -103,8 +105,41 @@ class CfgBuilder {
 
     function value(bb:BasicBlock, e:TExpr):{bb:BasicBlock, expr:TExpr} {
         return switch (e.kind) {
-            default:
+            case TVar(_, _):
+                throw "var declaration is not allowed in a value place";
+            case TWhile(_, _):
+                throw "while loop is not allowed in a value place";
+            case TLiteral(_) | TLocal(_) | TThis:
                 {bb: bb, expr: e};
+            case TIf(econd, ethen, eelse):
+                if (eelse == null)
+                    throw "if in a value place must have else branch";
+
+                var tmpVar = new TVar("tmp" + (tmpCount++), e.type);
+                declareVar(bb, tmpVar, e.pos);
+
+                var r = value(bb, econd);
+                r.bb.addElement(r.expr);
+
+                var bbNext = new BasicBlock();
+                {
+                    var bbThen = new BasicBlock();
+                    r.bb.addEdge(bbThen, "then");
+                    var r = value(bbThen, ethen);
+                    assignVar(r.bb, tmpVar, r.expr, e.pos);
+                    r.bb.addEdge(bbNext, "next");
+                }
+                {
+                    var bbElse = new BasicBlock();
+                    r.bb.addEdge(bbElse, "else");
+                    var r = value(bbElse, eelse);
+                    assignVar(r.bb, tmpVar, r.expr, e.pos);
+                    r.bb.addEdge(bbNext, "next");
+                }
+
+                {bb: bbNext, expr: new TExpr(TLocal(tmpVar), tmpVar.type, e.pos)};
+            default:
+                throw "todo " + e;
         }
     }
 
