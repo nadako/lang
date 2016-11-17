@@ -63,6 +63,9 @@ class CfgBuilder {
                     assignVar(bb, v, r.expr, e.pos);
                 }
                 bb;
+            case TLocal(v):
+                bb.addElement(e);
+                bb;
             default:
                 throw "todo " + e;
         }
@@ -107,11 +110,15 @@ class CfgBuilder {
                 var s = 'var ${v.name}';
                 if (e != null)
                     s += ' = ' + texprToString(e);
-                return s;
+                s;
+            case TLocal(v):
+                v.name;
             case TAssign(ATVar(v), e):
                 '${v.name} = ${texprToString(e)}';
             case TLiteral(LInt(i)):
                 '$i';
+            case TLiteral(LString(s)):
+                '"${Lexer.escapeString(s)}"';
             default:
                 throw "todo" + e;
         }

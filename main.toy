@@ -1,3 +1,4 @@
 function main() {
-    var i = 5;
+    var i = "hi";
+    i;
 }
