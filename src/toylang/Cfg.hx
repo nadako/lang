@@ -92,12 +92,6 @@ class CfgBuilder {
                 bb.addElement(e);
                 bb;
 
-            case TAssign(ATVar(v), evalue):
-                var r = value(bb, evalue);
-                bb = r.bb;
-                assignVar(bb, v, r.expr, e.pos);
-                bb;
-
             case TIf(econd, ethen, eelse):
                 var r = value(bb, econd);
                 r.bb.addElement(r.expr);
@@ -130,13 +124,24 @@ class CfgBuilder {
                 r.bb.addElement(r.expr);
                 r.bb;
 
+            case TAssign(_, _):
+                var r = value(bb, e);
+                r.bb.addElement(r.expr);
+                r.bb;
+
             case TMethodClosure(_, _) | TVarField(_, _) | TTuple(_):
                 var r = value(bb, e);
                 // it doesn't really make sense to add it to the block
                 r.bb.addElement(r.expr);
                 r.bb;
 
-            default:
+            case TWhile(_, _):
+                throw "todo " + e;
+
+            case TFunction(_, _):
+                throw "todo " + e;
+
+            case TBreak | TContinue | TReturn(_):
                 throw "todo " + e;
         }
     }
@@ -215,6 +220,12 @@ class CfgBuilder {
                 var r = value(bb, evalue);
                 {bb: r.bb, expr: new TExpr(TAssign(ATVar(v), r.expr), e.type, e.pos)};
 
+            case TAssign(ATField(eobj, f), evalue):
+                var r = value(bb, evalue);
+                var evalue = r.expr;
+                var r = value(r.bb, eobj);
+                {bb: r.bb, expr: new TExpr(TAssign(ATField(r.expr, f), evalue), e.type, e.pos)};
+
             case TTuple(exprs):
                 var valueExprs = [];
                 for (e in exprs) {
@@ -252,7 +263,10 @@ class CfgBuilder {
 
                 {bb: bbNext, expr: new TExpr(TLocal(tmpVar), tmpVar.type, e.pos)};
 
-            default:
+            case TFunction(_, _):
+                throw "todo " + e;
+
+            case TBreak | TContinue | TReturn(_):
                 throw "todo " + e;
         }
     }
@@ -292,8 +306,18 @@ class CfgBuilder {
                 s;
             case TLocal(v):
                 v.name;
-            case TAssign(ATVar(v), e):
-                '${v.name} = ${texprToString(e)}';
+            case TThis:
+                "this";
+            case TAssign(target, e):
+                var targetStr = switch (target) {
+                    case ATVar(v): v.name;
+                    case ATField(eobj, f):
+                        var fieldName = switch (f) {
+                            case FClassField(_, f): f.name;
+                        };
+                        texprToString(eobj) + "." + fieldName;
+                }
+                '$targetStr = ${texprToString(e)}';
             case TLiteral(LInt(i)):
                 '$i';
             case TLiteral(LBool(b)):
@@ -324,8 +348,10 @@ class CfgBuilder {
             case TNew(cl):
                 var path = cl.module.concat([cl.name]).join(".");
                 'new $path';
-            default:
-                throw "todo" + e;
+            case TIf(_, _, _) | TBlock(_) | TWhile(_, _) | TBreak | TContinue | TReturn(_):
+                throw 'block element expressions cannot contain ' + e.kind.getName();
+            case TFunction(_, _):
+                throw "todo" + e; // ???
         }
     }
 }
