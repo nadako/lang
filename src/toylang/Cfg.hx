@@ -41,9 +41,11 @@ class UnreachableBlock extends BasicBlock {
 
 class LoopContext {
     public var head:BasicBlock;
+    public var next:BasicBlock;
 
-    public function new(head:BasicBlock) {
+    public function new(head:BasicBlock, next:BasicBlock) {
         this.head = head;
+        this.next = next;
     }
 }
 
@@ -158,15 +160,16 @@ class CfgBuilder {
                 var r = value(bbLoopHead, econd);
                 r.bb.addElement(r.expr);
 
+                var bbNext = new BasicBlock();
+                bbLoopHead.addEdge(bbNext, "else");
+
                 var bbLoopBody = new BasicBlock();
                 bbLoopHead.addEdge(bbLoopBody, "then");
-                loopStack.add(new LoopContext(bbLoopHead));
+                loopStack.add(new LoopContext(bbLoopHead, bbNext));
                 var bbLoopBodyNext = block(bbLoopBody, ebody);
                 loopStack.pop();
                 bbLoopBodyNext.addEdge(bbLoopHead, "loop");
 
-                var bbNext = new BasicBlock();
-                bbLoopHead.addEdge(bbNext, "else");
                 bbNext;
 
             case TContinue:
@@ -176,10 +179,17 @@ class CfgBuilder {
                 bb.addEdge(loopCtx.head, "continue");
                 bbUnreachable;
 
+            case TBreak:
+                var loopCtx = loopStack.first();
+                if (loopCtx == null)
+                    throw "break outside of loop";
+                bb.addEdge(loopCtx.next, "break");
+                bbUnreachable;
+
             case TFunction(_, _):
                 throw "todo " + e;
 
-            case TBreak | TReturn(_):
+            case TReturn(_):
                 throw "todo " + e;
         }
     }
@@ -406,7 +416,7 @@ class CfgBuilder {
                 var path = cl.module.concat([cl.name]).join(".");
                 'new $path';
             case TIf(_, _, _) | TBlock(_) | TWhile(_, _) | TBreak | TContinue | TReturn(_):
-                throw 'block element expressions cannot contain ' + e.kind.getName();
+                throw 'basic block element expressions cannot contain ' + e.kind.getName();
             case TFunction(_, _):
                 throw "todo" + e; // ???
         }
