@@ -86,6 +86,9 @@ class Web {
                     },
                     edges: {
                         smooth: {type: "continuous"}
+                    },
+                    physics: {
+                        enabled: false
                     }
                 };
                 network = new VisNetwork(cfg, data, options);
