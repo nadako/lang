@@ -221,10 +221,10 @@ class CfgBuilder {
                 {bb: r.bb, expr: new TExpr(TAssign(ATVar(v), r.expr), e.type, e.pos)};
 
             case TAssign(ATField(eobj, f), evalue):
-                var r = value(bb, evalue);
-                var evalue = r.expr;
-                var r = value(r.bb, eobj);
-                {bb: r.bb, expr: new TExpr(TAssign(ATField(r.expr, f), evalue), e.type, e.pos)};
+                var r = value(bb, eobj);
+                var eobj = r.expr;
+                var r = value(r.bb, evalue);
+                {bb: r.bb, expr: new TExpr(TAssign(ATField(eobj, f), r.expr), e.type, e.pos)};
 
             case TTuple(exprs):
                 var valueExprs = [];
