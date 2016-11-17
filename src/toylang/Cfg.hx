@@ -1,5 +1,6 @@
 package toylang;
 
+import haxe.ds.GenericStack;
 import toylang.Type;
 
 class Edge {
@@ -29,18 +30,34 @@ class BasicBlock {
         elements.push(e);
     }
 
-    public inline function addEdge(to:BasicBlock, label:String) {
+    public function addEdge(to:BasicBlock, label:String) {
         edges.push(new Edge(to, label));
+    }
+}
+
+class UnreachableBlock extends BasicBlock {
+    override function addEdge(_, _) {}
+}
+
+class LoopContext {
+    public var head:BasicBlock;
+
+    public function new(head:BasicBlock) {
+        this.head = head;
     }
 }
 
 class CfgBuilder {
     var typer:Typer;
     var tmpCount:Int;
+    var loopStack:GenericStack<LoopContext>;
+    var bbUnreachable:BasicBlock;
 
     public function new(typer:Typer) {
         this.typer = typer;
         tmpCount = 0;
+        loopStack = new GenericStack();
+        bbUnreachable = new UnreachableBlock();
     }
 
     public function build(e:TExpr):BasicBlock {
@@ -143,17 +160,26 @@ class CfgBuilder {
 
                 var bbLoopBody = new BasicBlock();
                 bbLoopHead.addEdge(bbLoopBody, "then");
+                loopStack.add(new LoopContext(bbLoopHead));
                 var bbLoopBodyNext = block(bbLoopBody, ebody);
+                loopStack.pop();
                 bbLoopBodyNext.addEdge(bbLoopHead, "loop");
 
                 var bbNext = new BasicBlock();
                 bbLoopHead.addEdge(bbNext, "else");
                 bbNext;
 
+            case TContinue:
+                var loopCtx = loopStack.first();
+                if (loopCtx == null)
+                    throw "continue outside of loop";
+                bb.addEdge(loopCtx.head, "continue");
+                bbUnreachable;
+
             case TFunction(_, _):
                 throw "todo " + e;
 
-            case TBreak | TContinue | TReturn(_):
+            case TBreak | TReturn(_):
                 throw "todo " + e;
         }
     }
