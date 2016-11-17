@@ -297,6 +297,25 @@ class CfgBuilder {
         return 'digraph cfg {\n$blocks\n$edges\n}';
     }
 
+    public static function makeVisJsGraph(root:BasicBlock) {
+        var blocks = [];
+        var edges = [];
+        function walk(bb:BasicBlock) {
+            blocks.push({id: bb.id, label: '<${bb.id}>\n' + bb.elements.map(texprToString).join("\n")});
+            for (edge in bb.edges) {
+                edges.push({from: bb.id, to: edge.to.id, label: edge.label, arrows: "to"});
+                if (!Lambda.exists(blocks, function(b) return b.id == edge.to.id))
+                    walk(edge.to);
+            }
+        }
+        walk(root);
+
+        return {
+            nodes: blocks,
+            edges: edges,
+        };
+    }
+
     static function texprToString(e:TExpr):String {
         return switch (e.kind) {
             case TVar(v, e):
