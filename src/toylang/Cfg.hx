@@ -135,8 +135,20 @@ class CfgBuilder {
                 r.bb.addElement(r.expr);
                 r.bb;
 
-            case TWhile(_, _):
-                throw "todo " + e;
+            case TWhile(econd, ebody):
+                var bbLoopHead = new BasicBlock();
+                bb.addEdge(bbLoopHead, "next");
+                var r = value(bbLoopHead, econd);
+                r.bb.addElement(r.expr);
+
+                var bbLoopBody = new BasicBlock();
+                bbLoopHead.addEdge(bbLoopBody, "then");
+                var bbLoopBodyNext = block(bbLoopBody, ebody);
+                bbLoopBodyNext.addEdge(bbLoopHead, "loop");
+
+                var bbNext = new BasicBlock();
+                bbLoopHead.addEdge(bbNext, "else");
+                bbNext;
 
             case TFunction(_, _):
                 throw "todo " + e;
