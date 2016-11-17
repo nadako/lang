@@ -1,7 +1,8 @@
 class C {
     var f:String;
+    function doThings(v:String) {}
 }
 
-function main(a:Bool, c1:C, c2:C) {
-    trace((if (a) c1 else c2).f);
+function main(c:C, a) {
+    c.doThings(if (a) "hi" else "bye");
 }

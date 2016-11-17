@@ -104,11 +104,17 @@ class CfgBuilder {
                 r.bb.addElement(r.expr);
                 r.bb;
 
+            case TMethodCall(eobj, f, args):
+                var r = methodCall(bb, eobj, f, args, e.type, e.pos);
+                r.bb.addElement(r.expr);
+                r.bb;
+
             default:
                 throw "todo " + e;
         }
     }
 
+    // TODO: merge this and methodCall
     function call(bb:BasicBlock, eobj:TExpr, args:Array<TExpr>, ret:Type, pos:Position):{bb:BasicBlock, expr:TExpr} {
         var r = value(bb, eobj);
         eobj = r.expr;
@@ -120,6 +126,19 @@ class CfgBuilder {
             valueArgs.push(r.expr);
         }
         return {bb: bb, expr: new TExpr(TCall(eobj, valueArgs), ret, pos)}
+    }
+
+    function methodCall(bb:BasicBlock, eobj:TExpr, f:FieldAccess, args:Array<TExpr>, ret:Type, pos:Position):{bb:BasicBlock, expr:TExpr} {
+        var r = value(bb, eobj);
+        eobj = r.expr;
+        bb = r.bb;
+        var valueArgs = [];
+        for (e in args) {
+            var r = value(bb, e);
+            bb = r.bb;
+            valueArgs.push(r.expr);
+        }
+        return {bb: bb, expr: new TExpr(TMethodCall(eobj, f, valueArgs), ret, pos)}
     }
 
     function value(bb:BasicBlock, e:TExpr):{bb:BasicBlock, expr:TExpr} {
@@ -142,6 +161,8 @@ class CfgBuilder {
                 {bb: bb, expr: e};
             case TCall(eobj, args):
                 call(bb, eobj, args, e.type, e.pos);
+            case TMethodCall(eobj, f, args):
+                methodCall(bb, eobj, f, args, e.type, e.pos);
             case TVarField(eobj, f):
                 var r = value(bb, eobj);
                 {bb: r.bb, expr: new TExpr(TVarField(r.expr, f), e.type, e.pos)};
@@ -222,6 +243,11 @@ class CfgBuilder {
                 '"${Lexer.escapeString(s)}"';
             case TCall(eobj, args):
                 '${texprToString(eobj)}(${args.map(texprToString).join(", ")})';
+            case TMethodCall(eobj, f, args):
+                var fieldName = switch (f) {
+                    case FClassField(_, f): f.name;
+                }
+                '${texprToString(eobj)}.$fieldName(${args.map(texprToString).join(", ")})';
             case TVarField(e, f):
                 var fieldName = switch (f) {
                     case FClassField(_, f): f.name;
