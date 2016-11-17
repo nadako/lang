@@ -36,10 +36,11 @@ enum TyperErrorMessage {
 class Typer {
     var localsStack:GenericStack<Map<String,TVar>>;
     var thisStack:GenericStack<Type>;
-    var tVoid:Type;
-    var tString:Type;
-    var tInt:Type;
-    var tBool:Type;
+
+    public var tVoid:Type;
+    public var tString:Type;
+    public var tInt:Type;
+    public var tBool:Type;
 
     public function new() {
         localsStack = new GenericStack();
