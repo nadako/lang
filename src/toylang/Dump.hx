@@ -115,6 +115,7 @@ class Dump {
             case TLiteral(_):
             case TBreak:
             case TContinue:
+            case TFakeValue:
             case TReturn(e):
                 if (e != null)
                     b.add(dumpExpr(e, level + 1));

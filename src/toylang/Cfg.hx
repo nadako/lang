@@ -197,6 +197,9 @@ class CfgBuilder {
 
             case TFunction(_, _):
                 throw "todo " + e;
+
+            case TFakeValue:
+                throw "unexpected fake value";
         }
     }
 
@@ -321,7 +324,11 @@ class CfgBuilder {
                 throw "todo " + e;
 
             case TBreak | TContinue | TReturn(_):
-                throw "todo " + e;
+                var bb = blockElement(bb, e);
+                {bb: bb, expr: new TExpr(TFakeValue, e.type, e.pos)};
+
+            case TFakeValue:
+                throw "unexpected fake value";
         }
     }
 
@@ -426,7 +433,7 @@ class CfgBuilder {
                     'return';
                 else
                     'return ${texprToString(e)}';
-            case TIf(_, _, _) | TBlock(_) | TWhile(_, _) | TBreak | TContinue:
+            case TIf(_, _, _) | TBlock(_) | TWhile(_, _) | TBreak | TContinue | TFakeValue:
                 throw 'basic block element expressions cannot contain ' + e.kind.getName();
             case TFunction(_, _):
                 throw "todo" + e; // ???

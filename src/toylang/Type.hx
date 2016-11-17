@@ -119,6 +119,7 @@ enum TExprKind {
     TFunction(args:Array<TFunctionArg>, ret:Type, expr:TExpr);
     TAssign(target:AssignTarget, value:TExpr);
     TNew(cls:TClassDecl);
+    TFakeValue; // probably not a good idea
 }
 
 enum AssignTarget {
