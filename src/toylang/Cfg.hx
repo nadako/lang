@@ -69,14 +69,29 @@ class CfgBuilder {
                     assignVar(bb, v, r.expr, e.pos);
                 }
                 bb;
-            case TLiteral(_) | TLocal(_):
+
+            case TBlock([]):
+                // who needs empty blocks?
+                bb;
+
+            case TBlock([e]):
+                blockElement(bb, e);
+
+            case TBlock(exprs):
+                for (e in exprs)
+                    bb = blockElement(bb, e);
+                bb;
+
+            case TLiteral(_) | TLocal(_) | TThis:
                 bb.addElement(e);
                 bb;
+
             case TAssign(ATVar(v), evalue):
                 var r = value(bb, evalue);
                 bb = r.bb;
                 assignVar(bb, v, r.expr, e.pos);
                 bb;
+
             case TIf(econd, ethen, eelse):
                 var r = value(bb, econd);
                 r.bb.addElement(r.expr);
@@ -106,6 +121,12 @@ class CfgBuilder {
 
             case TMethodCall(eobj, f, args):
                 var r = methodCall(bb, eobj, f, args, e.type, e.pos);
+                r.bb.addElement(r.expr);
+                r.bb;
+
+            case TMethodClosure(_, _) | TVarField(_, _) | TTuple(_):
+                var r = value(bb, e);
+                // it doesn't really make sense to add it to the block
                 r.bb.addElement(r.expr);
                 r.bb;
 
@@ -145,27 +166,53 @@ class CfgBuilder {
         return switch (e.kind) {
             case TVar(_, _):
                 throw "var declaration is not allowed in a value place";
+
             case TWhile(_, _):
                 throw "while loop is not allowed in a value place";
+
             case TBlock([]):
                 // this shouldn't happen
                 throw "empty blocks are not allowed in a value place";
+
             case TBlock([e]):
                 value(bb, e);
+
             case TBlock(el):
                 var last = el.pop();
                 for (e in el)
                     bb = blockElement(bb, e);
                 value(bb, last);
+
             case TLiteral(_) | TLocal(_) | TThis:
                 {bb: bb, expr: e};
+
+            case TMethodClosure(eobj, f):
+                var r = value(bb, eobj);
+                {bb: r.bb, expr: new TExpr(TMethodClosure(r.expr, f), e.type, e.pos)};
+
             case TCall(eobj, args):
                 call(bb, eobj, args, e.type, e.pos);
+
             case TMethodCall(eobj, f, args):
                 methodCall(bb, eobj, f, args, e.type, e.pos);
+
             case TVarField(eobj, f):
                 var r = value(bb, eobj);
                 {bb: r.bb, expr: new TExpr(TVarField(r.expr, f), e.type, e.pos)};
+
+            case TAssign(ATVar(v), evalue):
+                var r = value(bb, evalue);
+                {bb: r.bb, expr: new TExpr(TAssign(ATVar(v), r.expr), e.type, e.pos)};
+
+            case TTuple(exprs):
+                var valueExprs = [];
+                for (e in exprs) {
+                    var r = value(bb, e);
+                    bb = r.bb;
+                    valueExprs.push(r.expr);
+                }
+                {bb: bb, expr: new TExpr(TTuple(valueExprs), e.type, e.pos)};
+
             case TIf(econd, ethen, eelse):
                 if (eelse == null)
                     throw "if in a value place must have else branch";
@@ -193,6 +240,7 @@ class CfgBuilder {
                 }
 
                 {bb: bbNext, expr: new TExpr(TLocal(tmpVar), tmpVar.type, e.pos)};
+
             default:
                 throw "todo " + e;
         }
@@ -243,6 +291,10 @@ class CfgBuilder {
                 '"${Lexer.escapeString(s)}"';
             case TCall(eobj, args):
                 '${texprToString(eobj)}(${args.map(texprToString).join(", ")})';
+            case TTuple(values):
+                var valuesStr = values.map(texprToString).join(", ");
+                if (values.length == 1) valuesStr += ",";
+                '($valuesStr)';
             case TMethodCall(eobj, f, args):
                 var fieldName = switch (f) {
                     case FClassField(_, f): f.name;
@@ -253,6 +305,11 @@ class CfgBuilder {
                     case FClassField(_, f): f.name;
                 }
                 '${texprToString(e)}.${fieldName}';
+            case TMethodClosure(e, f):
+                var fieldName = switch (f) {
+                    case FClassField(_, f): f.name;
+                }
+                'METHODCLOSURE<${texprToString(e)}.${fieldName}>';
             default:
                 throw "todo" + e;
         }
