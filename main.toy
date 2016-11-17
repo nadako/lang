@@ -1,3 +1,7 @@
-function main(a:Bool) {
-    trace({trace("hi"); monoFun(if (a) 10 else 15);});
+class C {
+    var f:String;
+}
+
+function main(a:Bool, c1:C, c2:C) {
+    trace((if (a) c1 else c2).f);
 }

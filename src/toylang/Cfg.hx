@@ -142,6 +142,9 @@ class CfgBuilder {
                 {bb: bb, expr: e};
             case TCall(eobj, args):
                 call(bb, eobj, args, e.type, e.pos);
+            case TVarField(eobj, f):
+                var r = value(bb, eobj);
+                {bb: r.bb, expr: new TExpr(TVarField(r.expr, f), e.type, e.pos)};
             case TIf(econd, ethen, eelse):
                 if (eelse == null)
                     throw "if in a value place must have else branch";
@@ -219,6 +222,11 @@ class CfgBuilder {
                 '"${Lexer.escapeString(s)}"';
             case TCall(eobj, args):
                 '${texprToString(eobj)}(${args.map(texprToString).join(", ")})';
+            case TVarField(e, f):
+                var fieldName = switch (f) {
+                    case FClassField(_, f): f.name;
+                }
+                '${texprToString(e)}.${fieldName}';
             default:
                 throw "todo" + e;
         }
