@@ -1,5 +1,0 @@
--cp src
--main Main
--js main.js
--lib hxnodejs
-# -cmd "C:\Program Files (x86)\Graphviz2.38\bin\dot.exe" dump/js/Main.main-cfg.dot -o main.png -Tpng
