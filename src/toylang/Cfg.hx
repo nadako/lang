@@ -186,10 +186,16 @@ class CfgBuilder {
                 bb.addEdge(loopCtx.next, "break");
                 bbUnreachable;
 
-            case TFunction(_, _):
-                throw "todo " + e;
+            case TReturn(rvalue):
+                if (rvalue == null) {
+                    bb.addElement(e);
+                } else {
+                    var r = value(bb, rvalue);
+                    r.bb.addElement(new TExpr(TReturn(r.expr), e.type, e.pos));
+                }
+                bbUnreachable;
 
-            case TReturn(_):
+            case TFunction(_, _):
                 throw "todo " + e;
         }
     }
@@ -415,7 +421,12 @@ class CfgBuilder {
             case TNew(cl):
                 var path = cl.module.concat([cl.name]).join(".");
                 'new $path';
-            case TIf(_, _, _) | TBlock(_) | TWhile(_, _) | TBreak | TContinue | TReturn(_):
+            case TReturn(e):
+                if (e == null)
+                    'return';
+                else
+                    'return ${texprToString(e)}';
+            case TIf(_, _, _) | TBlock(_) | TWhile(_, _) | TBreak | TContinue:
                 throw 'basic block element expressions cannot contain ' + e.kind.getName();
             case TFunction(_, _):
                 throw "todo" + e; // ???
