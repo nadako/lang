@@ -1,2 +1,4 @@
 /main.n
 /demo/web.js
+*.dot
+*.png

@@ -1,6 +1,5 @@
 package toylang;
 
-
 class Main {
     static function main() {
         var file = "main.toy";
@@ -43,6 +42,19 @@ class Main {
         for (decl in decls) {
             var typed = typer.typeDecl(decl);
             Sys.println(Dump.dumpTypeDecl(typed));
+
+            switch (typed) {
+                case TDFunction(fun) if (fun.expr != null):
+                    var cfgBuilder = new toylang.Cfg.CfgBuilder();
+                    var bbRoot = cfgBuilder.build(fun.expr);
+                    var graph = toylang.Cfg.CfgBuilder.makeDotGraph(bbRoot);
+
+                    var name = 'graph-${fun.name}';
+                    sys.io.File.saveContent('$name.dot', graph);
+                    Sys.command("C:/Program Files (x86)/Graphviz2.38/bin/dot.exe", ['$name.dot', '-o$name.png', "-Tpng"]);
+
+                case _:
+            }
         }
     }
 }
