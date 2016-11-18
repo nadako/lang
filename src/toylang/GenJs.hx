@@ -160,7 +160,13 @@ class GenJs {
                 buf.add("[");
                 generateSeparated(values, generateExpr, ", ");
                 buf.add("]");
-            case TNew(_) | TReturn(_) | TFunction(_):
+            case TReturn(v):
+                buf.add("return");
+                if (v != null) {
+                    buf.add(" ");
+                    generateExpr(v);
+                }
+            case TNew(_) | TFunction(_):
                 throw "todo " + e;
             case TFakeValue:
                 throw "unexpected " + e.kind.getName();
