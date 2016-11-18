@@ -1,8 +1,9 @@
-class C {
-    var f:String;
-    function doThings(v:String) {}
-}
-
-function main(c:C, a) {
-    c.doThings(if (a) "hi" else "bye");
+function main(cond:Bool) {
+    var answer = 42;
+    if (cond)
+        monoFun(answer);
+    else
+        while ({trace("sup"); true;})
+            trace(if ({trace("cond"); cond;}) "hi" else "bye");
+    trace("YO");
 }
