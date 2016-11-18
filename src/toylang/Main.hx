@@ -45,9 +45,9 @@ class Main {
 
             switch (typed) {
                 case TDFunction(fun) if (fun.expr != null):
-                    var cfgBuilder = new toylang.Cfg.CfgBuilder(typer);
+                    var cfgBuilder = new toylang.cfg.Builder(typer);
                     var bbRoot = cfgBuilder.build(fun.expr);
-                    var graph = toylang.Cfg.CfgBuilder.makeDotGraph(bbRoot);
+                    var graph = toylang.cfg.DebugUtils.makeDotGraph(bbRoot);
 
                     var name = 'graph-${fun.name}';
                     sys.io.File.saveContent('$name.dot', graph);

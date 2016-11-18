@@ -64,11 +64,11 @@ class Web {
                 return;
             }
 
-            @:privateAccess toylang.Cfg.BasicBlock.nextId = 0; // :)
-            var cfgBuilder = new toylang.Cfg.CfgBuilder(typer);
+            @:privateAccess toylang.cfg.BasicBlock.nextId = 0; // :)
+            var cfgBuilder = new toylang.cfg.Builder(typer);
             var bbRoot = cfgBuilder.build(firstFun.expr);
 
-            var data = toylang.Cfg.CfgBuilder.makeVisJsGraph(bbRoot);
+            var data = toylang.cfg.DebugUtils.makeVisJsGraph(bbRoot);
             trace(data);
             var data = {
                 nodes: new VisDataSet(data.nodes),
