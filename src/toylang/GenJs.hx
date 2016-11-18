@@ -17,10 +17,7 @@ class GenJs {
 
     function generateBlock(bb:BasicBlock, level:Int) {
         switch (bb.syntaxEdge) {
-            case null:
-                throw "no syntax edge from " + bb.id;
-
-            case SEEnd:
+            case SENone:
                 for (e in bb.elements)
                     generateStatement(e, level);
 

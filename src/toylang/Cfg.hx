@@ -16,7 +16,7 @@ class Edge {
 enum SyntaxEdge {
     SEBranch(bbThen:BasicBlock, bbElse:Null<BasicBlock>, bbNext:BasicBlock);
     SELoop(head:BasicBlock, bbBody:BasicBlock, bbNext:BasicBlock);
-    SEEnd;
+    SENone;
 }
 
 class BasicBlock {
@@ -31,6 +31,7 @@ class BasicBlock {
         id = nextId++;
         elements = [];
         edges = [];
+        syntaxEdge = SENone;
     }
 
     public inline function addElement(e:TExpr) {
@@ -71,8 +72,7 @@ class CfgBuilder {
 
     public function build(e:TExpr):BasicBlock {
         var bbRoot = new BasicBlock();
-        var bbEnd = block(bbRoot, e);
-        bbEnd.syntaxEdge = SEEnd;
+        block(bbRoot, e);
         return bbRoot;
     }
 
@@ -124,13 +124,11 @@ class CfgBuilder {
                 r.bb.addElement(r.expr);
 
                 var bbNext = new BasicBlock();
-                bbNext.syntaxEdge = SEEnd;
 
                 var bbThen = new BasicBlock();
                 r.bb.addEdge(bbThen, "then");
                 var bbThenNext = block(bbThen, ethen);
                 bbThenNext.addEdge(bbNext, "next");
-                bbThenNext.syntaxEdge = SEEnd;
 
                 var bbElse;
                 if (eelse == null) {
@@ -141,7 +139,6 @@ class CfgBuilder {
                     r.bb.addEdge(bbElse, "else");
                     var bbElseNext = block(bbElse, eelse);
                     bbElseNext.addEdge(bbNext, "next");
-                    bbElseNext.syntaxEdge = SEEnd;
                 }
 
                 r.bb.syntaxEdge = SEBranch(bbThen, bbElse, bbNext);
@@ -327,14 +324,12 @@ class CfgBuilder {
                     var r = value(bbThen, ethen);
                     assignVar(r.bb, tmpVar, r.expr, e.pos);
                     r.bb.addEdge(bbNext, "next");
-                    r.bb.syntaxEdge = SEEnd;
                 }
                 {
                     r.bb.addEdge(bbElse, "else");
                     var r = value(bbElse, eelse);
                     assignVar(r.bb, tmpVar, r.expr, e.pos);
                     r.bb.addEdge(bbNext, "next");
-                    r.bb.syntaxEdge = SEEnd;
                 }
 
                 r.bb.syntaxEdge = SEBranch(bbThen, bbElse, bbNext);
