@@ -144,7 +144,7 @@ class GenJs {
                 buf.add("]");
             case TNew(_) | TReturn(_) | TFunction(_):
                 throw "todo " + e;
-            case TBlock(_) | TBreak | TContinue | TFakeValue | TIf(_,_,_) | TWhile(_,_):
+            case TFakeValue:
                 throw "unexpected " + e.kind.getName();
         }
     }
