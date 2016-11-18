@@ -13,10 +13,17 @@ class Edge {
     }
 }
 
+enum SyntaxEdge {
+    SEBranch(bbThen:BasicBlock, bbElse:Null<BasicBlock>, bbNext:BasicBlock);
+    SELoop(head:BasicBlock, bbBody:BasicBlock, bbNext:BasicBlock);
+    SEEnd;
+}
+
 class BasicBlock {
     public var id:Int;
     public var elements:Array<TExpr>;
     public var edges:Array<Edge>;
+    public var syntaxEdge:SyntaxEdge;
 
     static var nextId = 0;
 
@@ -64,7 +71,8 @@ class CfgBuilder {
 
     public function build(e:TExpr):BasicBlock {
         var bbRoot = new BasicBlock();
-        block(bbRoot, e);
+        var bbEnd = block(bbRoot, e);
+        bbEnd.syntaxEdge = SEEnd;
         return bbRoot;
     }
 
@@ -116,20 +124,27 @@ class CfgBuilder {
                 r.bb.addElement(r.expr);
 
                 var bbNext = new BasicBlock();
+                bbNext.syntaxEdge = SEEnd;
 
                 var bbThen = new BasicBlock();
                 r.bb.addEdge(bbThen, "then");
-                bbThen = block(bbThen, ethen);
-                bbThen.addEdge(bbNext, "next");
+                var bbThenNext = block(bbThen, ethen);
+                bbThenNext.addEdge(bbNext, "next");
+                bbThenNext.syntaxEdge = SEEnd;
 
+                var bbElse;
                 if (eelse == null) {
+                    bbElse = null;
                     r.bb.addEdge(bbNext, "else");
                 } else {
-                    var bbElse = new BasicBlock();
+                    bbElse = new BasicBlock();
                     r.bb.addEdge(bbElse, "else");
-                    bbElse = block(bbElse, eelse);
-                    bbElse.addEdge(bbNext, "next");
+                    var bbElseNext = block(bbElse, eelse);
+                    bbElseNext.addEdge(bbNext, "next");
+                    bbElseNext.syntaxEdge = SEEnd;
                 }
+
+                r.bb.syntaxEdge = SEBranch(bbThen, bbElse, bbNext);
 
                 bbNext;
 
@@ -156,7 +171,6 @@ class CfgBuilder {
 
             case TWhile(econd, ebody):
                 var bbLoopHead = new BasicBlock();
-                bb.addEdge(bbLoopHead, "next");
                 var r = value(bbLoopHead, econd);
                 r.bb.addElement(r.expr);
 
@@ -169,6 +183,9 @@ class CfgBuilder {
                 var bbLoopBodyNext = block(bbLoopBody, ebody);
                 loopStack.pop();
                 bbLoopBodyNext.addEdge(bbLoopHead, "loop");
+
+                bb.addEdge(bbLoopHead, "next");
+                bb.syntaxEdge = SELoop(bbLoopHead, bbLoopBody, bbNext);
 
                 bbNext;
 
@@ -303,20 +320,24 @@ class CfgBuilder {
                 r.bb.addElement(r.expr);
 
                 var bbNext = new BasicBlock();
+                var bbThen = new BasicBlock();
+                var bbElse = new BasicBlock();
                 {
-                    var bbThen = new BasicBlock();
                     r.bb.addEdge(bbThen, "then");
                     var r = value(bbThen, ethen);
                     assignVar(r.bb, tmpVar, r.expr, e.pos);
                     r.bb.addEdge(bbNext, "next");
+                    r.bb.syntaxEdge = SEEnd;
                 }
                 {
-                    var bbElse = new BasicBlock();
                     r.bb.addEdge(bbElse, "else");
                     var r = value(bbElse, eelse);
                     assignVar(r.bb, tmpVar, r.expr, e.pos);
                     r.bb.addEdge(bbNext, "next");
+                    r.bb.syntaxEdge = SEEnd;
                 }
+
+                r.bb.syntaxEdge = SEBranch(bbThen, bbElse, bbNext);
 
                 {bb: bbNext, expr: new TExpr(TLocal(tmpVar), tmpVar.type, e.pos)};
 

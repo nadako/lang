@@ -11,15 +11,76 @@ class GenJs {
 
     public function generate(bbRoot:BasicBlock):String {
         buf = new StringBuf();
-
-        for (e in bbRoot.elements) {
-            generateStatement(e);
-        }
-
+        generateBlock(bbRoot, 0);
         return buf.toString();
     }
 
-    function generateStatement(e:TExpr) {
+    function generateBlock(bb:BasicBlock, level:Int) {
+        switch (bb.syntaxEdge) {
+            case null:
+                throw "no syntax edge from " + bb.id;
+
+            case SEEnd:
+                for (e in bb.elements)
+                    generateStatement(e, level);
+
+            case SELoop(head, body, next):
+                for (e in bb.elements)
+                    generateStatement(e, level);
+                generateLoop(head, body, level);
+                generateBlock(next, level);
+
+            case SEBranch(then, els, next):
+                for (i in 0...bb.elements.length - 1)
+                    generateStatement(bb.elements[i], level);
+                generateBranch(bb.elements[bb.elements.length - 1], then, els, level);
+                generateBlock(next, level);
+        }
+    }
+
+    function generateBranch(econd:TExpr, then:BasicBlock, els:Null<BasicBlock>, level:Int) {
+        indent(level);
+        buf.add("if (");
+        generateExpr(econd);
+        buf.add(") {\n");
+        generateBlock(then, level + 1);
+        indent(level);
+        buf.add("}");
+        if (els != null) {
+            buf.add(" else {\n");
+            generateBlock(els, level + 1);
+            indent(level);
+            buf.add("}\n");
+        } else {
+            buf.add("\n");
+        }
+    }
+
+    function generateLoop(head:BasicBlock, body:BasicBlock, level:Int) {
+        indent(level);
+        buf.add("while (true) {\n");
+
+        for (i in 0...head.elements.length - 1)
+            generateStatement(head.elements[i], level + 1);
+
+        indent(level + 1);
+        buf.add("if (!(");
+        generateExpr(head.elements[head.elements.length - 1]);
+        buf.add(")) break;\n");
+
+        generateBlock(body, level + 1);
+
+        indent(level);
+        buf.add("}\n");
+    }
+
+    function indent(level:Int) {
+        for (_ in 0...level)
+            buf.add("\t");
+    }
+
+    function generateStatement(e:TExpr, level:Int) {
+        indent(level);
         generateExpr(e);
         buf.add(";\n");
     }
