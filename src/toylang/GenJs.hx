@@ -8,10 +8,28 @@ class GenJs {
     public function new() {
     }
 
-    public function generate(bbRoot:BasicBlock):String {
+    public function generate(decls:Array<TDecl>):String {
         buf = new StringBuf();
-        generateBlock(bbRoot, 0);
+        for (decl in decls) {
+            switch (decl) {
+                case TDFunction(fun):
+                    generateFunction(fun);
+                case _:
+            }
+        }
         return buf.toString();
+    }
+
+    function generateFunction(fun:TFunctionDecl) {
+        if (fun.cfg == null)
+            return;
+        buf.add("function ");
+        buf.add(fun.name);
+        buf.add("(");
+        generateSeparated(fun.args, function(arg) buf.add(arg.name), ", ");
+        buf.add(") {\n");
+        generateBlock(fun.cfg, 1);
+        buf.add("}\n\n");
     }
 
     function generateBlock(bb:BasicBlock, level:Int) {

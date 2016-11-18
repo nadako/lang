@@ -39,21 +39,20 @@ class Main {
                 return;
             }
 
-        for (decl in decls) {
-            var typed = typer.typeDecl(decl);
+        var decls = decls.map(typer.typeDecl);
 
-            switch (typed) {
+        var genjs = new GenJs();
+        var jsCode = genjs.generate(decls);
+        sys.io.File.saveContent('out.js', jsCode);
+
+        for (decl in decls) {
+            switch (decl) {
                 case TDFunction(fun) if (fun.cfg != null):
                     var graph = DebugUtils.makeDotGraph(fun.cfg);
 
                     var name = 'graph-${fun.name}';
                     sys.io.File.saveContent('$name.dot', graph);
                     Sys.command("C:/Program Files (x86)/Graphviz2.38/bin/dot.exe", ['$name.dot', '-o$name.png', "-Tpng"]);
-
-                    var genjs = new GenJs();
-                    var jsCode = genjs.generate(fun.cfg);
-                    sys.io.File.saveContent('$name.js', jsCode);
-
                 case _:
             }
         }

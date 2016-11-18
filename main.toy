@@ -1,8 +1,10 @@
-class C {
-    var f:String;
-}
-
-function main(c:C) {
-    var v = if (true) false else true;
-    trace(c.f);
+function doStuff() {
+    var a = 15;
+    var b = false;
+    while (b) {
+        trace("hi");
+        a = 3;
+        b = true;
+    }
+    trace(if (b) "sup" else "wtf");
 }
