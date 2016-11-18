@@ -232,7 +232,27 @@ class Typer {
             case ECall(eobj, eargs):
                 call(bb, eobj, eargs, e.pos);
 
-            case EBinop(OpAssign, left, right):
+            case EBinop(op, left, right):
+                var left = {
+                    var r = value(bb, left);
+                    bb = r.bb;
+                    r.expr;
+                };
+                var right = {
+                    var r = value(bb, right);
+                    bb = r.bb;
+                    r.expr;
+                };
+                unifyThrow(right.type, left.type, e.pos);
+                var type = switch (op) {
+                    case OpAdd | OpSub | OpMul | OpDiv:
+                        left.type;
+                    case OpEq | OpNotEq | OpLt | OpLte | OpGt | OpGte:
+                        tBool;
+                }
+                {bb: bb, expr: new TExpr(TBinop(op, left, right), type, e.pos)};
+
+            case EAssign(left, right):
                 var left = {
                     var r = value(bb, left);
                     bb = r.bb;
@@ -325,7 +345,7 @@ class Typer {
                 popLocals();
                 bb;
 
-            case EField(_, _) | ELiteral(_) | EIdent(_) | ETuple(_) | ECall(_, _) | ENew(_) | EBinop(_, _, _):
+            case EField(_, _) | ELiteral(_) | EIdent(_) | ETuple(_) | ECall(_, _) | ENew(_) | EBinop(_, _, _) | EAssign(_, _):
                 var r = value(bb, e);
                 r.bb.addElement(r.expr); // some of them (e.g. literals) are not really needed
                 r.bb;

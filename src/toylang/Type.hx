@@ -113,6 +113,7 @@ enum TExprKind {
     TFunction(args:Array<TFunctionArg>, ret:Type, expr:TExpr);
     TAssign(target:AssignTarget, value:TExpr);
     TNew(cls:TClassDecl);
+    TBinop(op:Binop, left:TExpr, right:TExpr);
     TFakeValue; // probably not a good idea
 }
 

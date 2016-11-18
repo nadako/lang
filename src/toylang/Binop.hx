@@ -1,5 +1,14 @@
 package toylang;
 
 enum Binop {
-    OpAssign;
+    OpEq;
+    OpNotEq;
+    OpAdd;
+    OpSub;
+    OpDiv;
+    OpMul;
+    OpGt;
+    OpGte;
+    OpLt;
+    OpLte;
 }

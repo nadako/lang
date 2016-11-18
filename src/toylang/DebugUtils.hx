@@ -111,6 +111,8 @@ class DebugUtils {
                     case FClassField(_, f): f.name;
                 }
                 '${texprToString(eobj)}.$fieldName(${args.map(texprToString).join(", ")})';
+            case TBinop(op, left, right):
+                '${texprToString(left)} ${Printer.printBinop(op)} ${texprToString(right)}';
             case TVarField(e, f):
                 var fieldName = switch (f) {
                     case FClassField(_, f): f.name;

@@ -27,11 +27,19 @@ enum TokenKind {
     TkColon;
     TkSemicolon;
     TkArrow;
-    TkEqual;
+    TkEquals;
+    TkEqualsEquals;
+    TkBangEquals;
     TkLt;
     TkGt;
+    TkLte;
+    TkGte;
     TkBackslash;
     TkEof;
+    TkPlus;
+    TkMinus;
+    TkAsterisk;
+    TkSlash;
 }
 
 enum Keyword {
@@ -160,6 +168,7 @@ enum ExprKind {
     EIf(cond:Expr, then:Expr, els:Null<Expr>);
     EArrowFunction(args:Array<FunctionArg>, ret:Null<SyntaxType>, expr:Expr);
     EWhile(cond:Expr, body:Expr);
+    EAssign(left:Expr, right:Expr);
     EBinop(op:Binop, left:Expr, right:Expr);
     EBreak;
     EContinue;
