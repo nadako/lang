@@ -1,4 +1,4 @@
-package toylang.cfg;
+package toylang;
 
 import toylang.Type;
 

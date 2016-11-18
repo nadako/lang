@@ -31,7 +31,7 @@ class Main {
                 Sys.print(e.pos.format(input) + ": ");
                 switch (e.message) {
                     case UnificationError(actual, expected):
-                        Sys.println('`${Dump.typeToString(actual)}` should be `${Dump.typeToString(expected)}`');
+                        Sys.println('`${DebugUtils.typeToString(actual)}` should be `${DebugUtils.typeToString(expected)}`');
                     case other:
                         Sys.println(Std.string(other));
                 }
@@ -41,22 +41,18 @@ class Main {
 
         for (decl in decls) {
             var typed = typer.typeDecl(decl);
-            // Sys.println(Dump.dumpTypeDecl(typed));
 
             switch (typed) {
-                case TDFunction(fun) if (fun.expr != null):
-                    var cfgBuilder = new toylang.cfg.Builder(typer);
-                    var bbRoot = cfgBuilder.build(fun.expr);
-                    var graph = toylang.cfg.DebugUtils.makeDotGraph(bbRoot);
+                case TDFunction(fun) if (fun.cfg != null):
+                    var graph = DebugUtils.makeDotGraph(fun.cfg);
 
                     var name = 'graph-${fun.name}';
                     sys.io.File.saveContent('$name.dot', graph);
                     Sys.command("C:/Program Files (x86)/Graphviz2.38/bin/dot.exe", ['$name.dot', '-o$name.png', "-Tpng"]);
 
                     var genjs = new GenJs();
-                    var jsCode = genjs.generate(bbRoot);
+                    var jsCode = genjs.generate(fun.cfg);
                     sys.io.File.saveContent('$name.js', jsCode);
-
 
                 case _:
             }

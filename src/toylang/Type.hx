@@ -27,7 +27,7 @@ class TClassDecl extends TBaseDecl {
 class TFunctionDecl extends TBaseDecl {
     public var args:Array<TFunctionArg>;
     public var ret:Type;
-    public var expr:Null<TExpr>;
+    public var cfg:Null<BasicBlock>;
 }
 
 class TFunctionArg {
@@ -44,7 +44,6 @@ class TClassField {
     public var name:String;
     public var kind:TClassFieldKind;
     public var type:Type;
-    public var expr:TExpr;
     public var pos:Position;
 
     public function new(name, kind, type, pos) {

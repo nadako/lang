@@ -1,6 +1,7 @@
 package toylang;
 
 import haxe.ds.GenericStack;
+import toylang.BasicBlock;
 import toylang.Syntax;
 import toylang.Type;
 
@@ -33,9 +34,22 @@ enum TyperErrorMessage {
     InvalidAssignment;
 }
 
+class LoopContext {
+    public var head:BasicBlock;
+    public var next:BasicBlock;
+
+    public function new(head:BasicBlock, next:BasicBlock) {
+        this.head = head;
+        this.next = next;
+    }
+}
+
 class Typer {
     var localsStack:GenericStack<Map<String,TVar>>;
     var thisStack:GenericStack<Type>;
+    var loopStack:GenericStack<LoopContext>;
+    var tmpCount:Int;
+    var bbUnreachable:BasicBlock;
 
     public var tVoid:Type;
     public var tString:Type;
@@ -102,8 +116,16 @@ class Typer {
                 decl.args.push(new TFunctionArg(arg.name, type));
                 locals[arg.name] = new TVar(arg.name, type);
             }
-            decl.expr = typeExpr(fun.expr);
+            tmpCount = 0;
+            loopStack = new GenericStack();
+            bbUnreachable = new UnreachableBlock();
+
+            var bbRoot = new BasicBlock();
+            block(bbRoot, fun.expr);
+            decl.cfg = bbRoot;
+
             popLocals();
+
             for (arg in decl.args) {
                 if (isMono(arg.type))
                     throw new TyperError(CouldntInferArgumentType(arg.name), decl.pos);
@@ -120,6 +142,268 @@ class Typer {
         }
 
         return decl;
+    }
+
+    function block(bb:BasicBlock, e:Expr):BasicBlock {
+        var exprs = switch (e.kind) {
+            case EBlock(exprs): exprs;
+            default: [e];
+        }
+        for (e in exprs)
+            bb = blockElement(bb, e);
+        return bb;
+    }
+
+    function declareVar(bb:BasicBlock, name:String, type:Type, pos:Position):TVar {
+        var v = new TVar(name, type);
+        localsStack.first()[name] = v;
+        bb.addElement(new TExpr(TVar(v, null), tVoid, pos));
+        return v;
+    }
+
+    function assignVar(bb:BasicBlock, v:TVar, e:TExpr, pos:Position) {
+        bb.addElement(new TExpr(TAssign(ATVar(v), e), v.type, pos));
+    }
+
+    function value(bb:BasicBlock, e:Expr):{bb:BasicBlock, expr:TExpr} {
+        return switch (e.kind) {
+            case EParens(e):
+                value(bb, e);
+
+            case ELiteral(LString(s)):
+                {bb: bb, expr: new TExpr(TLiteral(LString(s)), tString, e.pos)};
+
+            case ELiteral(LInt(i)):
+                var i = Std.parseInt(i);
+                if (i == null)
+                    throw 'Invalid integer $i';
+                {bb: bb, expr: new TExpr(TLiteral(LInt(i)), tInt, e.pos)};
+
+            case EIdent("true"):
+                {bb: bb, expr: new TExpr(TLiteral(LBool(true)), tBool, e.pos)};
+
+            case EIdent("false"):
+                {bb: bb, expr: new TExpr(TLiteral(LBool(false)), tBool, e.pos)};
+
+            case EIdent(ident):
+                {bb: bb, expr: resolveIdent(ident, e.pos)};
+
+            case ETuple(exprs):
+                var types = [];
+                var typedExprs = [];
+                for (e in exprs) {
+                    var r = value(bb, e);
+                    bb = r.bb;
+                    typedExprs.push(r.expr);
+                    types.push(r.expr.type);
+                }
+                {bb: bb, expr: new TExpr(TTuple(typedExprs), TTuple(types), e.pos)};
+
+            case EField(eobj, name):
+                var r = value(bb, eobj);
+                {bb: r.bb, expr: typeField(r.expr, name, e.pos)};
+
+            case EVar(_, _, _):
+                throw "var declaration is not allowed in a value place";
+
+            case EWhile(_, _):
+                throw "while loop is not allowed in a value place";
+
+            case EBlock([]):
+                throw "empty blocks are not allowed in a value place";
+
+            case EBlock(el):
+                var last = el.pop();
+                pushLocals();
+                for (e in el)
+                    bb = blockElement(bb, e);
+                var r = value(bb, last);
+                popLocals();
+                r;
+
+            case ENew(path):
+                var tdecl = loadType(path.module, path.name);
+                var expr = switch (tdecl) {
+                    case TDClass(cl): new TExpr(TNew(cl), TInst(cl), e.pos);
+                    case TDFunction(_): throw false;
+                }
+                {bb: bb, expr: expr};
+
+            case ECall(eobj, eargs):
+                call(bb, eobj, eargs, e.pos);
+
+            case EBinop(OpAssign, left, right):
+                var left = {
+                    var r = value(bb, left);
+                    bb = r.bb;
+                    r.expr;
+                };
+                var right = {
+                    var r = value(bb, right);
+                    bb = r.bb;
+                    r.expr;
+                };
+                var kind =
+                    switch (left.kind) {
+                        case TLocal(v):
+                            TAssign(ATVar(v), right);
+                        case TVarField(obj, f):
+                            if (obj.type.match(TConst(_)))
+                                throw new TyperError(Immutable, e.pos);
+                            TAssign(ATField(obj, f), right);
+                        default:
+                            throw new TyperError(InvalidAssignment, e.pos);
+                    }
+                unifyThrow(right.type, left.type, e.pos);
+                {bb: bb, expr: new TExpr(kind, left.type, e.pos)};
+
+            case EIf(econd, ethen, eelse):
+                if (eelse == null)
+                    throw "if in a value place must have else branch";
+
+                var type = mkMono();
+                var tmpVar = declareVar(bb, "tmp" + (tmpCount++), type, e.pos);
+
+                var r = value(bb, econd);
+                r.bb.addElement(r.expr);
+
+                var bbNext = new BasicBlock();
+                var bbThen = new BasicBlock();
+                var bbElse = new BasicBlock();
+                {
+                    r.bb.addEdge(bbThen, "then");
+                    var r = value(bbThen, ethen);
+                    unifyThrow(r.expr.type, type, e.pos);
+                    assignVar(r.bb, tmpVar, r.expr, e.pos);
+                    r.bb.addEdge(bbNext, "next");
+                }
+                {
+                    r.bb.addEdge(bbElse, "else");
+                    var r = value(bbElse, eelse);
+                    unifyThrow(r.expr.type, type, e.pos);
+                    assignVar(r.bb, tmpVar, r.expr, e.pos);
+                    r.bb.addEdge(bbNext, "next");
+                }
+
+                r.bb.syntaxEdge = SEBranch(bbThen, bbElse, bbNext);
+
+                {bb: bbNext, expr: new TExpr(TLocal(tmpVar), tmpVar.type, e.pos)};
+
+            case EBreak | EContinue | EReturn(_):
+                var bb = blockElement(bb, e);
+                {bb: bb, expr: new TExpr(TFakeValue, mkMono(), e.pos)};
+
+            case EArrowFunction(_, _, _):
+                throw "todo " + e;
+        }
+    }
+
+    function blockElement(bb:BasicBlock, e:Expr):BasicBlock {
+        return switch (e.kind) {
+            case EVar(name, type, einitial):
+                var type = typeType(type);
+                var v = declareVar(bb, name, type, e.pos);
+                if (einitial != null) {
+                    var r = value(bb, einitial);
+                    bb = r.bb;
+                    unifyThrow(r.expr.type, type, einitial.pos);
+                    assignVar(bb, v, r.expr, e.pos);
+                }
+                bb;
+
+            case EBlock([]):
+                // who needs empty blocks?
+                bb;
+
+            case EParens(e):
+                blockElement(bb, e);
+
+            case EBlock(exprs):
+                pushLocals();
+                for (e in exprs)
+                    bb = blockElement(bb, e);
+                popLocals();
+                bb;
+
+            case EField(_, _) | ELiteral(_) | EIdent(_) | ETuple(_) | ECall(_, _) | ENew(_) | EBinop(_, _, _):
+                var r = value(bb, e);
+                r.bb.addElement(r.expr); // some of them (e.g. literals) are not really needed
+                r.bb;
+
+            case EArrowFunction(_, _, _):
+                throw "todo " + e;
+
+            case EIf(econd, ethen, eelse):
+                var r = value(bb, econd);
+                unifyThrow(r.expr.type, tBool, econd.pos);
+                r.bb.addElement(r.expr);
+
+                var bbNext = new BasicBlock();
+
+                var bbThen = new BasicBlock();
+                r.bb.addEdge(bbThen, "then");
+                var bbThenNext = block(bbThen, ethen);
+                bbThenNext.addEdge(bbNext, "next");
+
+                var bbElse;
+                if (eelse == null) {
+                    bbElse = null;
+                    r.bb.addEdge(bbNext, "else");
+                } else {
+                    bbElse = new BasicBlock();
+                    r.bb.addEdge(bbElse, "else");
+                    var bbElseNext = block(bbElse, eelse);
+                    bbElseNext.addEdge(bbNext, "next");
+                }
+
+                r.bb.syntaxEdge = SEBranch(bbThen, bbElse, bbNext);
+
+                bbNext;
+
+            case EWhile(econd, ebody):
+                var bbLoopHead = new BasicBlock();
+                var r = value(bbLoopHead, econd);
+                unifyThrow(r.expr.type, tBool, econd.pos);
+                r.bb.addElement(r.expr);
+
+                var bbNext = new BasicBlock();
+                bbLoopHead.addEdge(bbNext, "else");
+
+                var bbLoopBody = new BasicBlock();
+                bbLoopHead.addEdge(bbLoopBody, "then");
+                loopStack.add(new LoopContext(bbLoopHead, bbNext));
+                var bbLoopBodyNext = block(bbLoopBody, ebody);
+                loopStack.pop();
+                bbLoopBodyNext.addEdge(bbLoopHead, "loop");
+
+                bb.addEdge(bbLoopHead, "next");
+                bb.syntaxEdge = SELoop(bbLoopHead, bbLoopBody, bbNext);
+
+                bbNext;
+
+            case EContinue:
+                var loopCtx = loopStack.first();
+                if (loopCtx == null)
+                    throw "continue outside of loop";
+                bb.addEdge(loopCtx.head, "continue");
+                bbUnreachable;
+
+            case EBreak:
+                var loopCtx = loopStack.first();
+                if (loopCtx == null)
+                    throw "break outside of loop";
+                bb.addEdge(loopCtx.next, "break");
+                bbUnreachable;
+
+            case EReturn(rvalue):
+                if (rvalue == null) {
+                    bb.addElement(new TExpr(TReturn(null), tVoid, e.pos));
+                } else {
+                    var r = value(bb, rvalue);
+                    r.bb.addElement(new TExpr(TReturn(r.expr), tVoid, e.pos));
+                }
+                bbUnreachable;
+        }
     }
 
     inline function pushLocals():Map<String,TVar> {
@@ -145,8 +429,8 @@ class Typer {
             switch (field.kind) {
                 case FVar(type, expr):
                     var f = new TClassField(field.name, FVar, typeType(type), field.pos);
-                    if (expr != null)
-                        f.expr = typeExpr(expr);
+                    // if (expr != null)
+                    //     f.expr = typeExpr(expr);
                     fields.push(f);
                 case FFun(fun):
                     var isConst = field.modifiers.indexOf(FMConst) != -1;
@@ -155,115 +439,10 @@ class Typer {
                     thisStack.add(thisType);
                     var tfun = typeFunctionDecl(fun, field.pos);
                     thisStack.pop();
-                    var f = new TClassField(field.name, FMethod(isConst), TFun(tfun.args, tfun.ret), field.pos);
-                    if (tfun.expr != null)
-                        f.expr = tfun.expr;
-                    fields.push(f);
+                    fields.push(new TClassField(field.name, FMethod(isConst), TFun(tfun.args, tfun.ret), field.pos));
             }
         }
         return decl;
-    }
-
-    function typeExpr(e:Expr):TExpr {
-        return switch (e.kind) {
-            case EParens(e):
-                typeExpr(e);
-
-            case EBlock(exprs):
-                var typedExprs = [];
-                pushLocals();
-                for (e in exprs)
-                    typedExprs.push(typeExpr(e));
-                popLocals();
-                var type =
-                    if (typedExprs.length > 0)
-                        typedExprs[typedExprs.length - 1].type
-                    else
-                        tVoid;
-                new TExpr(TBlock(typedExprs), type, e.pos);
-
-            case EIdent("false"):
-                new TExpr(TLiteral(LBool(false)), tBool, e.pos);
-
-            case EIdent("true"):
-                new TExpr(TLiteral(LBool(true)), tBool, e.pos);
-
-            case EIdent(ident):
-                resolveIdent(ident, e.pos);
-
-            case ELiteral(LString(s)):
-                new TExpr(TLiteral(LString(s)), tString, e.pos);
-
-            case ELiteral(LInt(i)):
-                new TExpr(TLiteral(LInt(Std.parseInt(i))), tInt, e.pos);
-
-            case ECall(expr, args):
-                typeCall(expr, args, e.pos);
-
-            case EVar(name, type, einitial):
-                var type = typeType(type);
-                var v = new TVar(name, type);
-                var einitial =
-                    if (einitial != null) {
-                        var e = typeExpr(einitial);
-                        unifyThrow(e.type, type, einitial.pos);
-                        e;
-                    } else {
-                        null;
-                    }
-                localsStack.first()[name] = v;
-                new TExpr(TVar(v, einitial), tVoid, e.pos);
-
-            case EBinop(OpAssign, left, right):
-                var left = typeExpr(left);
-                var right = typeExpr(right);
-                var kind =
-                    switch (left.kind) {
-                        case TLocal(v):
-                            TAssign(ATVar(v), right);
-                        case TVarField(obj, f):
-                            if (obj.type.match(TConst(_)))
-                                throw new TyperError(Immutable, e.pos);
-                            TAssign(ATField(obj, f), right);
-                        default:
-                            throw new TyperError(InvalidAssignment, e.pos);
-                    }
-                unifyThrow(right.type, left.type, e.pos);
-                new TExpr(kind, left.type, e.pos);
-
-            case ETuple(exprs):
-                typeTuple(exprs, e.pos);
-
-            case EField(eobj, name):
-                var eobj = typeExpr(eobj);
-                typeField(eobj, name, e.pos);
-
-            case EIf(econd, ethen, eelse):
-                typeIf(econd, ethen, eelse, e.pos);
-
-            case EWhile(econd, ebody):
-                typeWhile(econd, ebody, e.pos);
-
-            case EBreak:
-                new TExpr(TBreak, mkMono(), e.pos);
-
-            case EContinue:
-                new TExpr(TContinue, mkMono(), e.pos);
-
-            case EReturn(re):
-                var re = if (re == null) null else typeExpr(re);
-                new TExpr(TReturn(re), mkMono(), e.pos);
-
-            case EArrowFunction(args, ret, expr):
-                typeFunctionExpr(args, ret, expr, e.pos);
-
-            case ENew(path):
-                var tdecl = loadType(path.module, path.name);
-                switch (tdecl) {
-                    case TDClass(cl): new TExpr(TNew(cl), TInst(cl), e.pos);
-                    case TDFunction(_): throw false;
-                }
-        }
     }
 
     function typeField(eobj:TExpr, name:String, pos:Position):TExpr {
@@ -292,52 +471,40 @@ class Typer {
         return new TExpr(kind, type, pos);
     }
 
-    function typeFunctionExpr(args:Array<FunctionArg>, ret:Null<SyntaxType>, expr:Expr, pos:Position):TExpr {
-        var locals = pushLocals();
+    // function typeFunctionExpr(args:Array<FunctionArg>, ret:Null<SyntaxType>, expr:Expr, pos:Position):TExpr {
+    //     var locals = pushLocals();
+
+    //     var typedArgs = [];
+    //     for (arg in args) {
+    //         var type = typeType(arg.type);
+    //         typedArgs.push(new TFunctionArg(arg.name, type));
+    //         locals[arg.name] = new TVar(arg.name, type);
+    //     }
+
+    //     var expr = typeExpr(expr);
+
+    //     popLocals();
+
+    //     var ret = typeType(ret);
+    //     unifyThrow(expr.type, ret, pos);
+
+    //     return new TExpr(TFunction(typedArgs, ret, expr), TFun(typedArgs, ret), pos);
+    // }
+
+    function call(bb:BasicBlock, eobj:Expr, eargs:Array<Expr>, pos:Position):{bb:BasicBlock, expr:TExpr} {
+        var eobj = {
+            var r = value(bb, eobj);
+            bb = r.bb;
+            r.expr;
+        };
 
         var typedArgs = [];
-        for (arg in args) {
-            var type = typeType(arg.type);
-            typedArgs.push(new TFunctionArg(arg.name, type));
-            locals[arg.name] = new TVar(arg.name, type);
+        for (e in eargs) {
+            var r = value(bb, e);
+            bb = r.bb;
+            typedArgs.push(r.expr);
         }
 
-        var expr = typeExpr(expr);
-
-        popLocals();
-
-        var ret = typeType(ret);
-        unifyThrow(expr.type, ret, pos);
-
-        return new TExpr(TFunction(typedArgs, ret, expr), TFun(typedArgs, ret), pos);
-    }
-
-    function typeIf(econd:Expr, ethen:Expr, eelse:Null<Expr>, pos:Position):TExpr {
-        var econd = typeExpr(econd);
-        unifyThrow(econd.type, tBool, econd.pos);
-        var ethen = typeExpr(ethen);
-        var type = ethen.type;
-        var eelse =
-            if (eelse != null) {
-                var e = typeExpr(eelse);
-                unifyThrow(e.type, type, e.pos);
-                e;
-            } else {
-                null;
-            };
-        return new TExpr(TIf(econd, ethen, eelse), type, pos);
-    }
-
-    function typeWhile(econd:Expr, ebody:Expr, pos:Position):TExpr {
-        var econd = typeExpr(econd);
-        unifyThrow(econd.type, tBool, econd.pos);
-        var ebody = typeExpr(ebody);
-        return new TExpr(TWhile(econd, ebody), tVoid, pos);
-    }
-
-    function typeCall(eobj:Expr, eargs:Array<Expr>, pos:Position):TExpr {
-        var eobj = typeExpr(eobj);
-        var typedArgs = [for (e in eargs) typeExpr(e)];
         var returnType;
         switch (follow(eobj.type)) {
             case TFun(args, ret):
@@ -379,18 +546,7 @@ class Typer {
             default:
                 TCall(eobj, typedArgs);
         }
-        return new TExpr(kind, returnType, pos);
-    }
-
-    function typeTuple(exprs:Array<Expr>, pos:Position):TExpr {
-        var types = [];
-        var typedExprs = [];
-        for (e in exprs) {
-            var e = typeExpr(e);
-            typedExprs.push(e);
-            types.push(e.type);
-        }
-        return new TExpr(TTuple(typedExprs), TTuple(types), pos);
+        return {bb: bb, expr: new TExpr(kind, returnType, pos)};
     }
 
     function findLocal(name:String):Null<TVar> {

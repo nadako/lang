@@ -1,4 +1,4 @@
-package toylang.cfg;
+package toylang;
 
 class Edge {
     public var to:BasicBlock;

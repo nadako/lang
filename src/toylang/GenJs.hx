@@ -1,6 +1,5 @@
 package toylang;
 
-import toylang.cfg.BasicBlock;
 import toylang.Type;
 
 class GenJs {

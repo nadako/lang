@@ -1,4 +1,4 @@
-package toylang.cfg;
+package toylang;
 
 enum SyntaxEdge {
     SEBranch(bbThen:BasicBlock, bbElse:Null<BasicBlock>, bbNext:BasicBlock);

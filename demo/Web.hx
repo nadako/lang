@@ -41,15 +41,13 @@ class Web {
                     var typedDecl = typer.typeDecl(decl);
                     if (firstFun == null) {
                         switch (typedDecl) {
-                            case TDFunction(fun) if (fun.expr != null):
+                            case TDFunction(fun) if (fun.cfg != null):
                                 firstFun = fun;
                             case _:
                         }
                     }
-                    r.push(toylang.Dump.dumpTypeDecl(typedDecl));
                 }
 
-                result.innerText = r.join("\n\n");
                 true;
             } catch (e:Any) {
                 result.innerText = 'ERROR: $e';
@@ -64,11 +62,7 @@ class Web {
                 return;
             }
 
-            @:privateAccess toylang.cfg.BasicBlock.nextId = 0; // :)
-            var cfgBuilder = new toylang.cfg.Builder(typer);
-            var bbRoot = cfgBuilder.build(firstFun.expr);
-
-            var data = toylang.cfg.DebugUtils.makeVisJsGraph(bbRoot);
+            var data = toylang.DebugUtils.makeVisJsGraph(firstFun.cfg);
             trace(data);
             var data = {
                 nodes: new VisDataSet(data.nodes),

@@ -1,9 +1,8 @@
-function main(cond:Bool) {
-    var answer = 42;
-    if (cond)
-        monoFun(answer);
-    else
-        while ({trace("sup"); true;})
-            trace(if ({trace("cond"); cond;}) "hi" else "bye");
-    trace("YO");
+class C {
+    var f:String;
+}
+
+function main(c:C) {
+    var v = if (true) false else true;
+    trace(c.f);
 }
