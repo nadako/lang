@@ -129,7 +129,7 @@ class DebugUtils {
                     'return';
                 else
                     'return ${texprToString(e)}';
-            case TIf(_, _, _) | TBlock(_) | TWhile(_, _) | TBreak | TContinue | TFakeValue:
+            case TFakeValue:
                 throw 'basic block element expressions cannot contain ' + e.kind.getName();
             case TFunction(_, _):
                 throw "todo" + e; // ???

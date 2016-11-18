@@ -101,7 +101,6 @@ class TVar {
 
 enum TExprKind {
     TThis;
-    TBlock(exprs:Array<TExpr>);
     TTuple(exprs:Array<TExpr>);
     TVar(v:TVar, einitial:Null<TExpr>);
     TLocal(v:TVar);
@@ -110,11 +109,7 @@ enum TExprKind {
     TCall(e:TExpr, args:Array<TExpr>);
     TMethodCall(eobj:TExpr, f:FieldAccess, args:Array<TExpr>);
     TLiteral(l:TLiteral);
-    TIf(econd:TExpr, ethen:TExpr, eelse:Null<TExpr>);
-    TWhile(econd:TExpr, ebody:TExpr);
-    TBreak;
-    TContinue;
-    TReturn(e:Null<TExpr>);
+    TReturn(e:Null<TExpr>); // todo: remove this
     TFunction(args:Array<TFunctionArg>, ret:Type, expr:TExpr);
     TAssign(target:AssignTarget, value:TExpr);
     TNew(cls:TClassDecl);
