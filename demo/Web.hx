@@ -21,12 +21,11 @@ extern class VisNetwork {
 @:expose
 class Web {
     static var code:TextAreaElement = cast document.getElementById("code");
-    static var result:Element = cast document.getElementById("result");
+    static var error:Element = cast document.getElementById("error");
     static var cfg:DivElement = cast document.getElementById("cfg");
     static var network:VisNetwork;
 
     static function main(editor) {
-
         var model:{function getValue():String; function onDidChangeContent(f:Void->Void):Void;} = editor.getModel();
         function compile() {
             var firstFun = null;
@@ -47,10 +46,10 @@ class Web {
                         }
                     }
                 }
-
+                error.innerText = "";
                 true;
             } catch (e:Any) {
-                result.innerText = 'ERROR: $e';
+                error.innerText = 'ERROR: $e';
                 false;
             }
 
