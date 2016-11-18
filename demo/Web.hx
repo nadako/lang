@@ -21,6 +21,7 @@ extern class VisNetwork {
 @:expose
 class Web {
     static var code:TextAreaElement = cast document.getElementById("code");
+    static var result:TextAreaElement = cast document.getElementById("result");
     static var error:Element = cast document.getElementById("error");
     static var cfg:DivElement = cast document.getElementById("cfg");
     static var network:VisNetwork;
@@ -36,8 +37,10 @@ class Web {
 
                 var decls = parser.parse();
                 var r = [];
+                var typed = [];
                 for (decl in decls) {
                     var typedDecl = typer.typeDecl(decl);
+                    typed.push(typedDecl);
                     if (firstFun == null) {
                         switch (typedDecl) {
                             case TDFunction(fun) if (fun.cfg != null):
@@ -46,10 +49,16 @@ class Web {
                         }
                     }
                 }
+
+                var gen = new toylang.GenJs();
+                var code = gen.generate(typed);
+
+                result.innerText = code;
                 error.innerText = "";
                 true;
             } catch (e:Any) {
                 error.innerText = 'ERROR: $e';
+                result.innerText = "";
                 false;
             }
 
