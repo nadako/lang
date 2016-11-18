@@ -45,6 +45,11 @@ class Main {
         var jsCode = genjs.generate(decls);
         sys.io.File.saveContent('out.js', jsCode);
 
+        var gencs = new GenCs();
+        var csCode = gencs.generate(decls);
+        sys.io.File.saveContent('out.cs', csCode);
+        Sys.command("C:/Program Files (x86)/Unity/Editor/Data/Mono/bin/gmcs.bat", ["out.cs", "-target:library"]);
+
         for (decl in decls) {
             switch (decl) {
                 case TDFunction(fun) if (fun.cfg != null):
