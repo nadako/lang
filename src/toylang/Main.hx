@@ -49,13 +49,14 @@ class Main {
                     var bbRoot = cfgBuilder.build(fun.expr);
                     var graph = toylang.Cfg.CfgBuilder.makeDotGraph(bbRoot);
 
-                    var genjs = new GenJs();
-                    var jsCode = genjs.generate(bbRoot);
-
                     var name = 'graph-${fun.name}';
-                    sys.io.File.saveContent('$name.js', jsCode);
                     sys.io.File.saveContent('$name.dot', graph);
                     Sys.command("C:/Program Files (x86)/Graphviz2.38/bin/dot.exe", ['$name.dot', '-o$name.png', "-Tpng"]);
+
+                    var genjs = new GenJs();
+                    var jsCode = genjs.generate(bbRoot);
+                    sys.io.File.saveContent('$name.js', jsCode);
+
 
                 case _:
             }
