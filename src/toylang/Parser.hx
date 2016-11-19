@@ -1,6 +1,7 @@
 package toylang;
 
 import toylang.Syntax;
+using StringTools;
 
 class ParserError {
     public var message:ParserErrorMessage;
@@ -387,6 +388,10 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
 
     function mPrefixUnop(op:Unop, expr:Expr, pmin:Position):Expr {
         return switch (expr.kind) {
+            case ELiteral(LInt(i)):
+                i = if (i.fastCodeAt(0) == "-".code) i.substring(1) else "-" + i;
+                mk(ELiteral(LInt(i)), Position.union(pmin, expr.pos));
+
             case EBinop(binop, left, right):
                 var left = mk(EUnop(op, left, false), Position.union(pmin, left.pos));
                 mk(EBinop(binop, left, right), Position.union(pmin, right.pos));
