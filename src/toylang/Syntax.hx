@@ -42,6 +42,7 @@ enum TokenKind {
     TkMinus;
     TkAsterisk;
     TkSlash;
+    TkBang;
 }
 
 enum Keyword {
@@ -172,6 +173,7 @@ enum ExprKind {
     EWhile(cond:Expr, body:Expr);
     EAssign(left:Expr, right:Expr);
     EBinop(op:Binop, left:Expr, right:Expr);
+    EUnop(op:Unop, expr:Expr, postfix:Bool);
     EBreak;
     EContinue;
     EReturn(e:Null<Expr>);

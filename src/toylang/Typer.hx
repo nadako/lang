@@ -232,6 +232,20 @@ class Typer {
             case ECall(eobj, eargs):
                 call(bb, eobj, eargs, e.pos);
 
+            case EUnop(op, expr, postfix):
+                var r = value(bb, expr);
+                var type = switch [op, postfix] {
+                    case [OpNeg, false]:
+                        unifyThrow(r.expr.type, tInt, e.pos);
+                        tInt;
+                    case [OpNot, false]:
+                        unifyThrow(r.expr.type, tBool, e.pos);
+                        tBool;
+                    case _: throw 'Unsupported operator $op (postfix=$postfix)';
+                }
+                {bb: r.bb, expr: new TExpr(TUnop(op, r.expr, postfix), type, e.pos)};
+
+
             case EBinop(op, left, right):
                 var left = {
                     var r = value(bb, left);
@@ -349,7 +363,7 @@ class Typer {
                 popLocals();
                 bb;
 
-            case EField(_, _) | ELiteral(_) | EIdent(_) | ETuple(_) | ECall(_, _) | ENew(_) | EBinop(_, _, _) | EAssign(_, _):
+            case EField(_, _) | ELiteral(_) | EIdent(_) | ETuple(_) | ECall(_, _) | ENew(_) | EUnop(_, _, _), EBinop(_, _, _) | EAssign(_, _):
                 var r = value(bb, e);
                 r.bb.addElement(r.expr); // some of them (e.g. literals) are not really needed
                 r.bb;

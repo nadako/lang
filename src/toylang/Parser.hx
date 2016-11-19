@@ -322,6 +322,12 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
             case [{kind: TkKeyword(KwdNew), pos: pmin}, path = parseExpect(parseTypePath)]:
                 mk(ENew(path), Position.union(pmin, last.pos));
 
+            case [{kind: TkBang, pos: pmin}, expr = parseExpect(parseExpr)]:
+                mPrefixUnop(OpNot, expr, pmin);
+
+            case [{kind: TkMinus, pos: pmin}, expr = parseExpect(parseExpr)]:
+                mPrefixUnop(OpNeg, expr, pmin);
+
             case [v = parseVar()]:
                 mk(EVar(v.name, v.type, v.initial), v.pos);
         }
@@ -376,6 +382,16 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
 
             case _:
                 expr;
+        }
+    }
+
+    function mPrefixUnop(op:Unop, expr:Expr, pmin:Position):Expr {
+        return switch (expr.kind) {
+            case EBinop(binop, left, right):
+                var left = mk(EUnop(op, left, false), Position.union(pmin, left.pos));
+                mk(EBinop(binop, left, right), Position.union(pmin, right.pos));
+            case _:
+                mk(EUnop(op, expr, false), Position.union(pmin, expr.pos));
         }
     }
 

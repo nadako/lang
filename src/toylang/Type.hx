@@ -114,6 +114,7 @@ enum TExprKind {
     TAssign(target:AssignTarget, value:TExpr);
     TNew(cls:TClassDecl);
     TBinop(op:Binop, left:TExpr, right:TExpr);
+    TUnop(op:Unop, expr:TExpr, postfix:Bool);
     TFakeValue; // probably not a good idea
 }
 

@@ -177,6 +177,11 @@ class Printer {
                 // buf.add(")");
                 buf.toString();
 
+            case EUnop(op, expr, postfix):
+                var s = '(${printExpr(expr, level)})';
+                var op = printUnop(op);
+                if (postfix) s + op else op + s;
+
             case EReturn(e):
                 if (e == null)
                     "return";
@@ -255,6 +260,13 @@ class Printer {
                     buf.add(printTypePath(path));
                 }
                 buf.toString();
+        }
+    }
+
+    public static function printUnop(op:Unop):String {
+        return switch (op) {
+            case OpNot: "!";
+            case OpNeg: "-";
         }
     }
 

@@ -2,6 +2,7 @@ package toylang;
 
 import toylang.Type;
 import toylang.Printer.printBinop;
+import toylang.Printer.printUnop;
 
 class GenJs {
     var buf:StringBuf;
@@ -151,6 +152,14 @@ class GenJs {
                 buf.add(printBinop(op));
                 buf.add(" ");
                 generateExpr(right);
+            case TUnop(op, expr, postfix):
+                if (!postfix)
+                    buf.add(printUnop(op));
+                buf.add("(");
+                generateExpr(expr);
+                buf.add(")");
+                if (postfix)
+                    buf.add(printUnop(op));
             case TCall(eobj, args):
                 generateExpr(eobj);
                 buf.add("(");
