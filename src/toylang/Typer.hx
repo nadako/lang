@@ -249,6 +249,10 @@ class Typer {
                         left.type;
                     case OpEq | OpNotEq | OpLt | OpLte | OpGt | OpGte:
                         tBool;
+                    case OpBoolAnd | OpBoolOr:
+                        unifyThrow(left.type, tBool, left.pos);
+                        unifyThrow(right.type, tBool, right.pos);
+                        tBool;
                 }
                 {bb: bb, expr: new TExpr(TBinop(op, left, right), type, e.pos)};
 

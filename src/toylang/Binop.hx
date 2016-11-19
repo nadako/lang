@@ -11,4 +11,6 @@ enum Binop {
     OpGte;
     OpLt;
     OpLte;
+    OpBoolAnd;
+    OpBoolOr;
 }

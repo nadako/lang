@@ -159,18 +159,22 @@ class Printer {
 
             case EAssign(eleft, eright):
                 var buf = new StringBuf();
+                // buf.add("(");
                 buf.add(printExpr(eleft, level));
                 buf.add(" = ");
                 buf.add(printExpr(eright, level));
+                // buf.add(")");
                 buf.toString();
 
             case EBinop(op, eleft, eright):
                 var buf = new StringBuf();
+                // buf.add("(");
                 buf.add(printExpr(eleft, level));
                 buf.add(" ");
                 buf.add(printBinop(op));
                 buf.add(" ");
                 buf.add(printExpr(eright, level));
+                // buf.add(")");
                 buf.toString();
 
             case EReturn(e):
@@ -266,6 +270,8 @@ class Printer {
             case OpGte: ">=";
             case OpLt: "<";
             case OpLte: "<=";
+            case OpBoolAnd: "&&";
+            case OpBoolOr: "||";
         };
     }
 

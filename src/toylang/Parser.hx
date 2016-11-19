@@ -336,40 +336,70 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                 parseExprNext(mk(EField(expr, ident), Position.union(expr.pos, last.pos)));
 
             case [{kind: TkEquals}, right = parseExpect(parseExpr)]:
-                parseExprNext(mk(EAssign(expr, right), Position.union(expr.pos, last.pos)));
+                mk(EAssign(expr, right), Position.union(expr.pos, last.pos));
 
             case [{kind: TkEqualsEquals}, right = parseExpect(parseExpr)]:
-                parseExprNext(mk(EBinop(OpEq, expr, right), Position.union(expr.pos, last.pos)));
+                mkBinop(OpEq, expr, right);
 
             case [{kind: TkBangEquals}, right = parseExpect(parseExpr)]:
-                parseExprNext(mk(EBinop(OpNotEq, expr, right), Position.union(expr.pos, last.pos)));
+                mkBinop(OpNotEq, expr, right);
 
             case [{kind: TkPlus}, right = parseExpect(parseExpr)]:
-                parseExprNext(mk(EBinop(OpAdd, expr, right), Position.union(expr.pos, last.pos)));
+                mkBinop(OpAdd, expr, right);
 
             case [{kind: TkMinus}, right = parseExpect(parseExpr)]:
-                parseExprNext(mk(EBinop(OpSub, expr, right), Position.union(expr.pos, last.pos)));
+                mkBinop(OpSub, expr, right);
 
             case [{kind: TkSlash}, right = parseExpect(parseExpr)]:
-                parseExprNext(mk(EBinop(OpDiv, expr, right), Position.union(expr.pos, last.pos)));
+                mkBinop(OpDiv, expr, right);
 
             case [{kind: TkAsterisk}, right = parseExpect(parseExpr)]:
-                parseExprNext(mk(EBinop(OpMul, expr, right), Position.union(expr.pos, last.pos)));
+                mkBinop(OpMul, expr, right);
 
             case [{kind: TkLt}, right = parseExpect(parseExpr)]:
-                parseExprNext(mk(EBinop(OpLt, expr, right), Position.union(expr.pos, last.pos)));
+                mkBinop(OpLt, expr, right);
 
             case [{kind: TkLte}, right = parseExpect(parseExpr)]:
-                parseExprNext(mk(EBinop(OpLte, expr, right), Position.union(expr.pos, last.pos)));
+                mkBinop(OpLte, expr, right);
 
             case [{kind: TkGt}, right = parseExpect(parseExpr)]:
-                parseExprNext(mk(EBinop(OpGt, expr, right), Position.union(expr.pos, last.pos)));
+                mkBinop(OpGt, expr, right);
 
             case [{kind: TkGte}, right = parseExpect(parseExpr)]:
-                parseExprNext(mk(EBinop(OpGte, expr, right), Position.union(expr.pos, last.pos)));
+                mkBinop(OpGte, expr, right);
+
+            case [{kind: TkAmpAmp}, right = parseExpect(parseExpr)]:
+                mkBinop(OpBoolAnd, expr, right);
+
+            case [{kind: TkPipePipe}, right = parseExpect(parseExpr)]:
+                mkBinop(OpBoolOr, expr, right);
 
             case _:
                 expr;
+        }
+    }
+
+    function mkBinop(op:Binop, left:Expr, right:Expr):Expr {
+        return switch (right.kind) {
+            case EBinop(rOp, rLeft, rRight) if (precedence(op) <= precedence(rOp)):
+                var left = mkBinop(op, left, rLeft);
+                return mk(EBinop(rOp, left, rRight), Position.union(left.pos, rRight.pos));
+            case EAssign(rLeft, rRight):
+                var left = mkBinop(op, left, rLeft);
+                return mk(EAssign(left, rRight), Position.union(left.pos, rRight.pos));
+            case _:
+                return mk(EBinop(op, left, right), Position.union(left.pos, right.pos));
+        }
+    }
+
+    static function precedence(op:Binop):Int {
+        return switch (op) {
+            case OpMul | OpDiv : 1;
+            case OpAdd | OpSub : 2;
+            case OpGt | OpLt | OpGte | OpLte : 3;
+            case OpEq | OpNotEq: 4;
+            case OpBoolAnd : 5;
+            case OpBoolOr : 6;
         }
     }
 

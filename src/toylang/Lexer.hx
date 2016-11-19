@@ -58,6 +58,8 @@ class Lexer extends hxparse.Lexer implements hxparse.RuleBuilder {
         "-" => mk(lexer, TkMinus),
         "/" => mk(lexer, TkSlash),
         "*" => mk(lexer, TkAsterisk),
+        "&&" => mk(lexer, TkAmpAmp),
+        "\\|\\|" => mk(lexer, TkPipePipe),
         "\\(" => mk(lexer, TkParenOpen),
         "\\)" => mk(lexer, TkParenClose),
         "<=" => mk(lexer, TkLte),

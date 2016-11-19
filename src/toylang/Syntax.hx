@@ -30,6 +30,8 @@ enum TokenKind {
     TkEquals;
     TkEqualsEquals;
     TkBangEquals;
+    TkAmpAmp;
+    TkPipePipe;
     TkLt;
     TkGt;
     TkLte;
