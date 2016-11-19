@@ -381,6 +381,9 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
             case [{kind: TkPipePipe}, right = parseExpect(parseExpr)]:
                 mkBinop(OpBoolOr, expr, right);
 
+            case [{kind: TkBang}]:
+                mk(EUnop(OpNot, expr, true), Position.union(expr.pos, last.pos));
+
             case _:
                 expr;
         }
