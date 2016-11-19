@@ -245,6 +245,17 @@ class Typer {
                 }
                 {bb: r.bb, expr: new TExpr(TUnop(op, r.expr, postfix), type, e.pos)};
 
+            case EBinop(OpBoolOr, left, right):
+                var ethen = right;
+                var econd = new Expr(EUnop(OpNot, left, false), e.pos);
+                var eelse = new Expr(EIdent("true"), e.pos);
+                value(bb, new Expr(EIf(econd, ethen, eelse), e.pos));
+
+            case EBinop(OpBoolAnd, left, right):
+                var ethen = right;
+                var econd = left;
+                var eelse = new Expr(EIdent("false"), e.pos);
+                value(bb, new Expr(EIf(econd, ethen, eelse), e.pos));
 
             case EBinop(op, left, right):
                 var left = {
@@ -263,10 +274,8 @@ class Typer {
                         left.type;
                     case OpEq | OpNotEq | OpLt | OpLte | OpGt | OpGte:
                         tBool;
-                    case OpBoolAnd | OpBoolOr:
-                        unifyThrow(left.type, tBool, left.pos);
-                        unifyThrow(right.type, tBool, right.pos);
-                        tBool;
+                    case _:
+                        throw "&& and || are handled above";
                 }
                 {bb: bb, expr: new TExpr(TBinop(op, left, right), type, e.pos)};
 
