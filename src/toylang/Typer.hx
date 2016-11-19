@@ -154,10 +154,10 @@ class Typer {
         return bb;
     }
 
-    function declareVar(bb:BasicBlock, name:String, type:Type, pos:Position):TVar {
+    function declareVar(bb:BasicBlock, name:String, type:Type, pos:Position, ?einit:TExpr):TVar {
         var v = new TVar(name, type);
         localsStack.first()[name] = v;
-        bb.addElement(new TExpr(TVar(v, null), tVoid, pos));
+        bb.addElement(new TExpr(TVar(v, einit), tVoid, pos));
         return v;
     }
 
@@ -547,9 +547,11 @@ class Typer {
 
         var typedArgs = [];
         for (e in eargs) {
+            var tmpVarName = "callArg" + (tmpCount++);
             var r = value(bb, e);
             bb = r.bb;
-            typedArgs.push(r.expr);
+            var v = declareVar(bb, tmpVarName, r.expr.type, e.pos, r.expr);
+            typedArgs.push(new TExpr(TLocal(v), v.type, e.pos));
         }
 
         var returnType;
