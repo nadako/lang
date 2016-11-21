@@ -79,12 +79,48 @@ class Main {
             return r;
         }
 
+        // first row + small default, i guess
+        function chooseColumn(m:M):Int {
+            var numCols = m[0].patterns.length;
+            var scores = [for (i in 0...numCols) 0];
+            var first = true;
+            for (c in m) {
+                for (i in 0...numCols) {
+                    switch (c.patterns[i]) {
+                        case PAny:
+                        case PCtor(_):
+                            if (first || scores[i] > 0)
+                                scores[i]++;
+                    }
+                }
+                first = false;
+            }
+            var col = 0;
+            for (i in 1...numCols) {
+                if (scores[i] > scores[col])
+                    col = i;
+            }
+            return col;
+        }
+
         function sw(subjects:Array<Subj>, cases:M):DT {
             return if (cases.length == 0) {
                 Fail;
             } else if (Lambda.foreach(cases[0].patterns, function(p) return p.match(PAny))) {
                 Leaf(cases[0].expr);
             } else {
+                var needed = chooseColumn(cases);
+                if (needed > 0) {
+                    // swap columns
+                    var subj = subjects[needed];
+                    subjects[needed] = subjects[0];
+                    subjects[0] = subj;
+                    for (c in cases) {
+                        var pat = c.patterns[needed];
+                        c.patterns[needed] = c.patterns[0];
+                        c.patterns[0] = pat;
+                    }
+                }
                 var ctors = getSigma(cases);
                 var subj = subjects[0];
                 var rest = subjects.slice(1);
