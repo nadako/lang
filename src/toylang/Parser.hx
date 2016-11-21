@@ -368,9 +368,6 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
             case [{kind: TkParenOpen}, first = parseVarBinding(), {kind: TkComma}, rest = separated(TkComma, parseVarBinding), {kind: TkParenClose}]:
                 rest.unshift(first);
                 VTuple(rest);
-
-            case _:
-                unexpected();
         }
     }
 
