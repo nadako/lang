@@ -1,8 +1,3 @@
 function doStuff() {
-    var v = 2;
-    switch (v) {
-        case 1: 1;
-        case 2: 2;
-        case _: 3;
-    }
+    var ((a,_),b) = ((1,2),3);
 }

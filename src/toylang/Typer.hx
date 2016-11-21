@@ -379,29 +379,38 @@ class Typer {
                             unifyThrow(r.expr.type, type, einitial.pos);
                             assignVar(bb, v, r.expr, e.pos);
                         }
+
                     case VTuple(binds):
                         if (einitial == null)
                             throw new TyperError(ComplexVariableBindingMustHaveInitialValue, e.pos);
 
-                        var tmpVar = declareVar(bb, "tmp" + (tmpCount++), type, e.pos);
+                        var tmpVar = declareVar(bb, "tUnpack" + (tmpCount++), type, e.pos);
                         var r = value(bb, einitial);
                         bb = r.bb;
                         assignVar(bb, tmpVar, r.expr, e.pos);
 
-                        var elocal = new TExpr(TLocal(tmpVar), tmpVar.type, e.pos);
+                        function loop(expr:TExpr, binds:Array<VarBinding>) {
+                            var i = 0;
+                            for (bind in binds) {
+                                var elementType = mkMono();
+                                var elementExpr = new TExpr(TTupleElement(expr, i), elementType, e.pos);
+                                switch (bind) {
+                                    case VName("_"):
+                                        // skip binding
 
-                        var i = 0;
-                        for (bind in binds) {
-                            switch (bind) {
-                                case VName(name):
-                                    var t = mkMono();
-                                    declareVar(bb, name, t, e.pos, new TExpr(TTupleElement(elocal, i), t, e.pos));
+                                    case VName(name):
+                                        declareVar(bb, name, elementType, e.pos, elementExpr);
 
-                                case VTuple(_):
-                                    throw "TODO: recursive tuple bindings";
+                                    case VTuple(binds):
+                                        var tmpVar = declareVar(bb, "tUnpack" + (tmpCount++), elementType, e.pos, elementExpr);
+                                        loop(new TExpr(TLocal(tmpVar), tmpVar.type, e.pos), binds);
+                                }
+                                i++;
                             }
-                            i++;
                         }
+
+                        var elocal = new TExpr(TLocal(tmpVar), tmpVar.type, e.pos);
+                        loop(elocal, binds);
                 };
 
                 bb;
