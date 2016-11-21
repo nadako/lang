@@ -83,7 +83,7 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
             case [f = parseFunction()]:
                 new Field(f.fun.name, FFun(f.fun), f.pos);
 
-            case [v = parseVar(), _ = checkSemicolon()]:
+            case [v = parseVarField(), _ = checkSemicolon()]:
                 new Field(v.name, FVar(v.type, v.initial), v.pos);
         }
     }
@@ -118,7 +118,7 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
         }
     }
 
-    function parseVar():{name:String, type:Null<SyntaxType>, initial:Null<Expr>, pos:Position} {
+    function parseVarField():{name:String, type:Null<SyntaxType>, initial:Null<Expr>, pos:Position} {
         return switch stream {
             case [{kind: TkKeyword(KwdVar), pos: pmin}, {kind: TkIdent(name)}, type = parseOptional(parseTypeHint)]:
                 var expr = switch stream {
@@ -337,8 +337,40 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
             case [{kind: TkMinus, pos: pmin}, expr = parseExpect(parseExpr)]:
                 mPrefixUnop(OpNeg, expr, pmin);
 
-            case [v = parseVar()]:
-                mk(EVar(VName(v.name), v.type, v.initial), v.pos);
+            case [v = parseVarExpr()]:
+                mk(EVar(v.binding, v.type, v.initial), v.pos);
+        }
+    }
+
+    function parseVarExpr():{binding:VarBinding, type:Null<SyntaxType>, initial:Null<Expr>, pos:Position} {
+        return switch stream {
+            case [{kind: TkKeyword(KwdVar), pos: pmin}, binding = parseVarBinding(), type = parseOptional(parseTypeHint)]:
+                var expr = switch stream {
+                    case [{kind: TkEquals}, e = parseExpr()]: e;
+                    case _: null;
+                };
+                {
+                    binding: binding,
+                    type: type,
+                    initial: expr,
+                    pos: Position.union(pmin, last.pos)
+                }
+        }
+    }
+
+    function parseVarBinding():VarBinding {
+        return switch stream {
+            // simple name binding
+            case [{kind: TkIdent(name)}]:
+                VName(name);
+
+            // tuple binding
+            case [{kind: TkParenOpen}, first = parseVarBinding(), {kind: TkComma}, rest = separated(TkComma, parseVarBinding), {kind: TkParenClose}]:
+                rest.unshift(first);
+                VTuple(rest);
+
+            case _:
+                unexpected();
         }
     }
 

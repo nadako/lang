@@ -46,7 +46,7 @@ class Printer {
                 case FFun(fun):
                     buf.add(printFunction(fun, level + 1));
                 case FVar(type, initial):
-                    buf.add(printVar(field.name, type, initial, level + 1));
+                    buf.add(printVar(VName(field.name), type, initial, level + 1));
                     buf.add(";");
             }
             buf.add("\n");
@@ -92,10 +92,10 @@ class Printer {
         return buf.toString();
     }
 
-    public function printVar(name:String, type:Null<SyntaxType>, initial:Null<Expr>, level:Int):String {
+    public function printVar(binding:VarBinding, type:Null<SyntaxType>, initial:Null<Expr>, level:Int):String {
         var buf = new StringBuf();
         buf.add("var ");
-        buf.add(name);
+        buf.add(printVarBinding(binding));
         if (type != null) {
             buf.add(":");
             buf.add(printSyntaxType(type));
@@ -105,6 +105,19 @@ class Printer {
             buf.add(printExpr(initial, level));
         }
         return buf.toString();
+    }
+
+    public function printVarBinding(binding:VarBinding):String {
+        return switch (binding) {
+            case VName(name):
+                name;
+            case VTuple(binds):
+                switch (binds) {
+                    case []: throw "tuple var bindings can't be empty";
+                    case [bind]: '(${printVarBinding(bind)},)';
+                    case _: '(${[for (b in binds) printVarBinding(b)].join(", ")})';
+                }
+        }
     }
 
     function printBlockExpr(buf:StringBuf, expr:Expr, level:Int) {
@@ -218,8 +231,8 @@ class Printer {
                 }
                 buf.toString();
 
-            case EVar(VName(name), type, initial):
-                printVar(name, type, initial, level);
+            case EVar(binding, type, initial):
+                printVar(binding, type, initial, level);
 
             case EParens(e):
                 '(${printExpr(e, level)})';

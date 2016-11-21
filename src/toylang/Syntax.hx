@@ -184,6 +184,7 @@ enum ExprKind {
 
 enum VarBinding {
     VName(name:String);
+    VTuple(binds:Array<VarBinding>);
 }
 
 class Case {

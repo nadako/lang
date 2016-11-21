@@ -368,7 +368,9 @@ class Typer {
         return switch (e.kind) {
             case EVar(bind, type, einitial):
                 var name = switch (bind) {
-                    case VName(name): name;
+                    case VName(name):
+                        name;
+                    case VTuple(_): throw "TODO";
                 };
 
                 var type = typeType(type);
