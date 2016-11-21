@@ -150,7 +150,9 @@ class Matcher {
         var edges = [for (e in edges) '${e.from} -> ${e.to} [label=${json(e.label)}];'];
         var dot = 'digraph dt {\ngraph [rankdir=LR];\n${nodes.join("\n")}\n${edges.join("\n")}\n}';
 
+        #if (sys || hxnodejs)
         sys.io.File.saveContent('dt.dot', dot);
         Sys.command("C:/Program Files (x86)/Graphviz2.38/bin/dot.exe", ['dt.dot', '-odt.png', "-Tpng"]);
+        #end
     }
 }
