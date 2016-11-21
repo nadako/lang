@@ -1,9 +1,14 @@
 function doStuff() {
     switch 15 {
-        case 1: trace("one");
-        case 2: trace("two");
-        case 3: trace("three");
-        case _: trace("who knows");
+        case 1:
+            trace("one");
+        case 2:
+            trace("two");
+        case 3:
+            trace("hey");
+            trace("three");
+        case _:
+            trace("who knows");
     }
     trace("hi");
 }

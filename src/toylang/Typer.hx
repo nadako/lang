@@ -35,6 +35,7 @@ enum TyperErrorMessage {
     Immutable;
     InvalidAssignment;
     ComplexVariableBindingMustHaveInitialValue;
+    MatchNotExhaustive;
 }
 
 class LoopContext {
@@ -349,21 +350,15 @@ class Typer {
                 var bb = blockElement(bb, e);
                 {bb: bb, expr: new TExpr(TFakeValue, mkMono(), e.pos)};
 
-            case ESwitch(evalue, cases):
-                var r = value(bb, evalue);
-                var matcher = new Matcher();
-                var dt = matcher.match(r.expr, cases);
-                pattern(r.bb, dt, e.pos);
-
-            case EArrowFunction(_, _, _):
+            case ESwitch(_, _) | EArrowFunction(_, _, _):
                 throw "TODO:\n" + new Printer().printExpr(e, 0);
         }
     }
 
-    function pattern(bb:BasicBlock, dt:DecisionTree, pos:Position):{bb: BasicBlock, expr: TExpr} {
+    function pattern(bb:BasicBlock, dt:DecisionTree, pos:Position):BasicBlock {
         return switch (dt) {
             case DLeaf(expr):
-                value(bb, expr);
+                blockElement(bb, expr);
 
             case DSwitch(subject, cases, def):
                 bb.addElement(subject);
@@ -374,9 +369,9 @@ class Typer {
                 for (c in cases) {
                     var bbCase = new BasicBlock();
                     bb.addEdge(bbCase, 'case ${c.ctor}');
-                    var r = pattern(bbCase, c.dt, pos);
-                    r.bb.addEdge(bbNext, "next");
-                    r.bb.addElement(r.expr);
+
+                    var bb = pattern(bbCase, c.dt, pos);
+                    bb.addEdge(bbNext, "next");
 
                     var casePatternExpr = switch (c.ctor) {
                         case CLiteral(l):
@@ -389,17 +384,17 @@ class Typer {
                 if (def != null) {
                     bbDef = new BasicBlock();
                     bb.addEdge(bbDef, 'default');
-                    var r = pattern(bbDef, def, pos);
-                    r.bb.addEdge(bbNext, "next");
-                    r.bb.addElement(r.expr);
+
+                    var bb = pattern(bbDef, def, pos);
+                    bb.addEdge(bbNext, "next");
                 }
 
                 bb.syntaxEdge = SESwitch(cfgCases, bbDef, bbNext);
 
-                {bb: bbNext, expr: new TExpr(TLiteral(LString("what here?")), tString, pos)};
+                bbNext;
 
             case DFail:
-                {bb: bb, expr: new TExpr(TLiteral(LString("failed match?")), tString, pos)};
+                throw new TyperError(MatchNotExhaustive, pos);
         }
     }
 
@@ -467,7 +462,7 @@ class Typer {
                 popLocals();
                 bb;
 
-            case EField(_, _) | ELiteral(_) | EIdent(_) | ETuple(_) | ECall(_, _) | ENew(_) | EUnop(_, _, _), EBinop(_, _, _) | EAssign(_, _) | ESwitch(_, _):
+            case EField(_, _) | ELiteral(_) | EIdent(_) | ETuple(_) | ECall(_, _) | ENew(_) | EUnop(_, _, _), EBinop(_, _, _) | EAssign(_, _):
                 var r = value(bb, e);
                 r.bb.addElement(r.expr); // some of them (e.g. literals) are not really needed
                 r.bb;
@@ -498,6 +493,12 @@ class Typer {
                 r.bb.syntaxEdge = SEBranch(bbThen, bbElse, bbNext);
 
                 bbNext;
+
+            case ESwitch(evalue, cases):
+                var r = value(bb, evalue);
+                var matcher = new Matcher();
+                var dt = matcher.match(r.expr, cases);
+                pattern(r.bb, dt, e.pos);
 
             case EWhile(econd, ebody):
                 var bbLoopHead = new BasicBlock();
