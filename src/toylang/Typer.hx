@@ -32,6 +32,7 @@ enum TyperErrorMessage {
     FieldNotFound(type:Type, name:String);
     Immutable;
     InvalidAssignment;
+    ComplexVariableBindingMustHaveInitialValue;
 }
 
 class LoopContext {
@@ -367,20 +368,42 @@ class Typer {
     function blockElement(bb:BasicBlock, e:Expr):BasicBlock {
         return switch (e.kind) {
             case EVar(bind, type, einitial):
-                var name = switch (bind) {
+                var type = typeType(type);
+
+                switch (bind) {
                     case VName(name):
-                        name;
-                    case VTuple(_): throw "TODO";
+                        var v = declareVar(bb, name, type, e.pos);
+                        if (einitial != null) {
+                            var r = value(bb, einitial);
+                            bb = r.bb;
+                            unifyThrow(r.expr.type, type, einitial.pos);
+                            assignVar(bb, v, r.expr, e.pos);
+                        }
+                    case VTuple(binds):
+                        if (einitial == null)
+                            throw new TyperError(ComplexVariableBindingMustHaveInitialValue, e.pos);
+
+                        var tmpVar = declareVar(bb, "tmp" + (tmpCount++), type, e.pos);
+                        var r = value(bb, einitial);
+                        bb = r.bb;
+                        assignVar(bb, tmpVar, r.expr, e.pos);
+
+                        var elocal = new TExpr(TLocal(tmpVar), tmpVar.type, e.pos);
+
+                        var i = 0;
+                        for (bind in binds) {
+                            switch (bind) {
+                                case VName(name):
+                                    var t = mkMono();
+                                    declareVar(bb, name, t, e.pos, new TExpr(TTupleElement(elocal, i), t, e.pos));
+
+                                case VTuple(_):
+                                    throw "TODO: recursive tuple bindings";
+                            }
+                            i++;
+                        }
                 };
 
-                var type = typeType(type);
-                var v = declareVar(bb, name, type, e.pos);
-                if (einitial != null) {
-                    var r = value(bb, einitial);
-                    bb = r.bb;
-                    unifyThrow(r.expr.type, type, einitial.pos);
-                    assignVar(bb, v, r.expr, e.pos);
-                }
                 bb;
 
             case EBlock([]):

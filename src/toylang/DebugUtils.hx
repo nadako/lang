@@ -106,6 +106,8 @@ class DebugUtils {
                 var valuesStr = values.map(texprToString).join(", ");
                 if (values.length == 1) valuesStr += ",";
                 '($valuesStr)';
+            case TTupleElement(etuple, index):
+                '($texprToString(etuple)).$index';
             case TMethodCall(eobj, f, args):
                 var fieldName = switch (f) {
                     case FClassField(_, f): f.name;

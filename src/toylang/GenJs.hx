@@ -205,6 +205,11 @@ class GenJs {
                 buf.add("[");
                 generateSeparated(values, generateExpr, ", ");
                 buf.add("]");
+            case TTupleElement(eobj, index):
+                generateExpr(eobj);
+                buf.add("[");
+                buf.add(index);
+                buf.add("]");
             case TReturn(v):
                 buf.add("return");
                 if (v != null) {

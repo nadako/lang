@@ -102,6 +102,7 @@ class TVar {
 enum TExprKind {
     TThis;
     TTuple(exprs:Array<TExpr>);
+    TTupleElement(etuple:TExpr, index:Int);
     TVar(v:TVar, einitial:Null<TExpr>);
     TLocal(v:TVar);
     TMethodClosure(e:TExpr, f:FieldAccess);
