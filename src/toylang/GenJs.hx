@@ -1,6 +1,7 @@
 package toylang;
 
 import toylang.Type;
+import toylang.SyntaxEdge;
 import toylang.Printer.printBinop;
 import toylang.Printer.printUnop;
 
@@ -51,6 +52,13 @@ class GenJs {
                     generateStatement(bb.elements[i], level);
                 generateBranch(bb.elements[bb.elements.length - 1], then, els, level);
                 generateBlock(next, level);
+
+            case SESwitch(cases, def, next):
+                for (i in 0...bb.elements.length - 1)
+                    generateStatement(bb.elements[i], level);
+                var cond = bb.elements[bb.elements.length - 1];
+                generateSwitch(cond, cases, def, level);
+                generateBlock(next, level);
         }
     }
 
@@ -70,6 +78,10 @@ class GenJs {
         } else {
             buf.add("\n");
         }
+    }
+
+    function generateSwitch(cond:TExpr, cases:Array<SESwitchCase>, def:Null<BasicBlock>, level:Int) {
+        throw "TODO";
     }
 
     function generateLoop(head:BasicBlock, body:BasicBlock, level:Int) {

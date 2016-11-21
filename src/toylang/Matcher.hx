@@ -38,7 +38,7 @@ class Matcher {
     public function new() {
     }
 
-    public function match(subject:TExpr, cases:Array<Case>) {
+    public function match(subject:TExpr, cases:Array<Case>):DecisionTree {
         var matchCases = [];
         for (c in cases) {
             var pattern =
@@ -117,6 +117,7 @@ class Matcher {
 
         var dt = compile([subject], matchCases);
         makeDTGraph(dt);
+        return dt;
     }
 
 
