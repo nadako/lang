@@ -39,10 +39,8 @@ class Main {
                 return;
             }
 
-        var decls = decls.map(typer.typeDecl);
-
         var genjs = new GenJs();
-        var jsCode = genjs.generate(decls);
+        var jsCode = genjs.generate(typedDecls);
         sys.io.File.saveContent('out.js', jsCode);
 
         // var gencs = new GenCs();
@@ -50,7 +48,7 @@ class Main {
         // sys.io.File.saveContent('out.cs', csCode);
         // Sys.command("C:/Program Files (x86)/Unity/Editor/Data/Mono/bin/gmcs.bat", ["out.cs", "-target:library"]);
 
-        for (decl in decls) {
+        for (decl in typedDecls) {
             switch (decl) {
                 case TDFunction(fun) if (fun.cfg != null):
                     var graph = DebugUtils.makeDotGraph(fun.cfg);
