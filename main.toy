@@ -1,3 +1,9 @@
 function doStuff() {
-    var ((a,_),b) = ((1,2),3);
+    var v = switch 15 {
+        case 1: trace("one");
+        case 2: trace("two");
+        case 3: trace("three");
+        case _: trace("who knows");
+    }
+    trace("hi");
 }

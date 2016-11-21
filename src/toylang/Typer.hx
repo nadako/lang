@@ -3,7 +3,9 @@ package toylang;
 import haxe.ds.GenericStack;
 import toylang.BasicBlock;
 import toylang.Syntax;
+import toylang.SyntaxEdge;
 import toylang.Type;
+import toylang.Matcher;
 
 class TyperError {
     public var message:TyperErrorMessage;
@@ -342,26 +344,53 @@ class Typer {
                 {bb: bb, expr: new TExpr(TFakeValue, mkMono(), e.pos)};
 
             case ESwitch(evalue, cases):
-                var type = mkMono();
-                var tmpVar = declareVar(bb, "tmp" + (tmpCount++), type, e.pos);
-
                 var r = value(bb, evalue);
-                bb = r.bb;
-                bb.addElement(r.expr);
-
                 var matcher = new Matcher();
                 var dt = matcher.match(r.expr, cases);
-
-                var cases = [];
-                var def = null;
-
-                var bbNext = new BasicBlock();
-                bb.syntaxEdge = SESwitch(cases, def, bbNext);
-
-                {bb: bbNext, expr: new TExpr(TLocal(tmpVar), tmpVar.type, e.pos)};
+                pattern(r.bb, dt, e.pos);
 
             case EArrowFunction(_, _, _):
                 throw "TODO:\n" + new Printer().printExpr(e, 0);
+        }
+    }
+
+    function pattern(bb:BasicBlock, dt:DecisionTree, pos:Position):{bb: BasicBlock, expr: TExpr} {
+        return switch (dt) {
+            case DLeaf(expr):
+                value(bb, expr);
+
+            case DSwitch(subject, cases, def):
+                bb.addElement(subject);
+
+                var bbNext = new BasicBlock();
+
+                var cfgCases:Array<SESwitchCase> = [];
+                for (c in cases) {
+                    var bbCase = new BasicBlock();
+                    bb.addEdge(bbCase, 'case ${c.ctor}');
+                    var r = pattern(bbCase, c.dt, pos);
+                    r.bb.addEdge(bbNext, "next");
+                    r.bb.addElement(r.expr);
+
+                    var casePattern = new TExpr(TLiteral(LString(Std.string(c.ctor))), mkMono(), pos);
+                    cfgCases.push({expr: casePattern, body: bbCase});
+                }
+
+                var bbDef = null;
+                if (def != null) {
+                    bbDef = new BasicBlock();
+                    bb.addEdge(bbDef, 'default');
+                    var r = pattern(bbDef, def, pos);
+                    r.bb.addEdge(bbNext, "next");
+                    r.bb.addElement(r.expr);
+                }
+
+                bb.syntaxEdge = SESwitch(cfgCases, bbDef, bbNext);
+
+                {bb: bbNext, expr: new TExpr(TLiteral(LString("what here?")), tString, pos)};
+
+            case DFail:
+                {bb: bb, expr: new TExpr(TLiteral(LString("failed match?")), tString, pos)};
         }
     }
 
