@@ -73,7 +73,7 @@ class DebugUtils {
         }
     }
 
-    static function texprToString(e:TExpr):String {
+    public static function texprToString(e:TExpr):String {
         return switch (e.kind) {
             case TVar(v, e):
                 var s = 'var ${v.name}';

@@ -1,8 +1,8 @@
 function doStuff() {
     var v = 2;
     switch (v) {
-        case 1:
-        case 2:
-        case _:
+        case 1: 1;
+        case 2: 2;
+        case _: 3;
     }
 }
