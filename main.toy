@@ -1,5 +1,5 @@
 function doStuff() {
-    var v = switch 15 {
+    switch 15 {
         case 1: trace("one");
         case 2: trace("two");
         case 3: trace("three");

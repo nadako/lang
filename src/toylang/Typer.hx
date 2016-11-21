@@ -168,19 +168,25 @@ class Typer {
         bb.addElement(new TExpr(TAssign(ATVar(v), e), v.type, pos));
     }
 
+    function typeLiteral(l:Literal, pos:Position):TExpr {
+        return switch (l) {
+            case LString(s):
+                new TExpr(TLiteral(LString(s)), tString, pos);
+            case LInt(i):
+                var i = Std.parseInt(i);
+                if (i == null)
+                    throw 'Invalid integer $i';
+                new TExpr(TLiteral(LInt(i)), tInt, pos);
+        }
+    }
+
     function value(bb:BasicBlock, e:Expr):{bb:BasicBlock, expr:TExpr} {
         return switch (e.kind) {
             case EParens(e):
                 value(bb, e);
 
-            case ELiteral(LString(s)):
-                {bb: bb, expr: new TExpr(TLiteral(LString(s)), tString, e.pos)};
-
-            case ELiteral(LInt(i)):
-                var i = Std.parseInt(i);
-                if (i == null)
-                    throw 'Invalid integer $i';
-                {bb: bb, expr: new TExpr(TLiteral(LInt(i)), tInt, e.pos)};
+            case ELiteral(l):
+                {bb: bb, expr: typeLiteral(l, e.pos)};
 
             case EIdent("true"):
                 {bb: bb, expr: new TExpr(TLiteral(LBool(true)), tBool, e.pos)};
@@ -372,8 +378,11 @@ class Typer {
                     r.bb.addEdge(bbNext, "next");
                     r.bb.addElement(r.expr);
 
-                    var casePattern = new TExpr(TLiteral(LString(Std.string(c.ctor))), mkMono(), pos);
-                    cfgCases.push({expr: casePattern, body: bbCase});
+                    var casePatternExpr = switch (c.ctor) {
+                        case CLiteral(l):
+                            typeLiteral(l, pos);
+                    };
+                    cfgCases.push({expr: casePatternExpr, body: bbCase});
                 }
 
                 var bbDef = null;
