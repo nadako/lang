@@ -341,11 +341,23 @@ class Typer {
                 {bb: bb, expr: new TExpr(TFakeValue, mkMono(), e.pos)};
 
             case ESwitch(evalue, cases):
+                var type = mkMono();
+                var tmpVar = declareVar(bb, "tmp" + (tmpCount++), type, e.pos);
+
                 var r = value(bb, evalue);
+                bb = r.bb;
+                bb.addElement(r.expr);
+
                 var matcher = new Matcher();
-                matcher.match(r.expr, cases);
-                // throw "TODO:\n" + new Printer().printExpr(e, 0);
-                r;
+                var dt = matcher.match(r.expr, cases);
+
+                var cases = [];
+                var def = null;
+
+                var bbNext = new BasicBlock();
+                bb.syntaxEdge = SESwitch(cases, def, bbNext);
+
+                {bb: bbNext, expr: new TExpr(TLocal(tmpVar), tmpVar.type, e.pos)};
 
             case EArrowFunction(_, _, _):
                 throw "TODO:\n" + new Printer().printExpr(e, 0);

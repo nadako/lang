@@ -98,7 +98,7 @@ class GenJs {
             generateBlock(def, level + 2);
         }
         indent(level);
-        buf.add("}");
+        buf.add("}\n");
     }
 
     function generateLoop(head:BasicBlock, body:BasicBlock, level:Int) {
