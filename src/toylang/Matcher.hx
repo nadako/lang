@@ -3,9 +3,11 @@ package toylang;
 import toylang.Type;
 import toylang.Syntax;
 import toylang.DebugUtils.texprToString;
+import toylang.Typer.follow;
 
 enum Pattern {
     PConstructor(c:Constructor);
+    PTuple(patterns:Array<Pattern>);
     PAny;
 }
 
@@ -35,21 +37,42 @@ typedef MatcherCase = {
 }
 
 class Matcher {
-    public function new() {
-    }
+    public function new() {}
 
     public function match(subject:TExpr, cases:Array<Case>):DecisionTree {
         var matchCases = [];
+
+        function fail<T>(e:Expr):T
+            return throw "Unrecognized pattern " + (new Printer().printExpr(e, 0));
+
+        function parsePattern(e:Expr, t:Type):Pattern {
+            return switch (e.kind) {
+                case ELiteral(l):
+                    PConstructor(CLiteral(l));
+                case EIdent("_"):
+                    switch (follow(t)) {
+                        case TTuple(types):
+                            PTuple([for (_ in 0...types.length) PAny]);
+                        case _:
+                            PAny;
+                    };
+                case ETuple(exprs):
+                    var subTypes = switch (follow(t)) {
+                        case TTuple(types): types;
+                        case _: fail(e);
+                    };
+                    if (exprs.length < subTypes.length)
+                        throw "Not enough arguments";
+                    else if (exprs.length > subTypes.length)
+                        throw "Too many arguments";
+                    PTuple([for (i in 0...exprs.length) parsePattern(exprs[i], subTypes[i])]);
+                case _:
+                    fail(e);
+            }
+        }
+
         for (c in cases) {
-            var pattern =
-                switch (c.pattern.kind) {
-                    case ELiteral(l):
-                        PConstructor(CLiteral(l));
-                    case EIdent("_"):
-                        PAny;
-                    case _:
-                        throw "Unrecognized pattern " + (new Printer().printExpr(c.pattern, 0));
-                }
+            var pattern = parsePattern(c.pattern, subject.type);
             matchCases.push({
                 patterns: [pattern],
                 expr: c.expr,
@@ -60,6 +83,7 @@ class Matcher {
             var result = new haxe.ds.EnumValueMap();
             for (c in cases) {
                 switch (c.patterns[0]) {
+                    case PTuple(_): throw "todo";
                     case PAny:
                     case PConstructor(ctor):
                         result.set(ctor, true);
@@ -86,6 +110,7 @@ class Matcher {
             var result = [];
             for (c in cases) {
                 switch (c.patterns[0]) {
+                    case PTuple(_): throw "todo";
                     case PConstructor(_):
                     case PAny:
                         result.push({patterns: c.patterns.slice(1), expr: c.expr});

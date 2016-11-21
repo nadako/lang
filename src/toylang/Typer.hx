@@ -758,7 +758,7 @@ class Typer {
         }
     }
 
-    static function follow(a:Type):Type {
+    public static function follow(a:Type):Type {
         return switch (a) {
             case TMono(m) if (m.type != null):
                 follow(m.type);
