@@ -1,10 +1,8 @@
 function doStuff() {
-    var a = 15;
-    var b = false;
-    while (b) {
-        trace("hi");
-        a = 3;
-        b = true;
+    var v = 2;
+    switch (v) {
+        case 1:
+        case 2:
+        case _:
     }
-    trace(if (b) "sup" else "wtf");
 }

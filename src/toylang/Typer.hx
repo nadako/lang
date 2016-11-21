@@ -340,11 +340,15 @@ class Typer {
                 var bb = blockElement(bb, e);
                 {bb: bb, expr: new TExpr(TFakeValue, mkMono(), e.pos)};
 
-            case ESwitch(_, _):
-                throw "todo " + e;
+            case ESwitch(evalue, cases):
+                var r = value(bb, evalue);
+                var matcher = new Matcher();
+                matcher.match(r.expr, cases);
+                // throw "TODO:\n" + new Printer().printExpr(e, 0);
+                r;
 
             case EArrowFunction(_, _, _):
-                throw "todo " + e;
+                throw "TODO:\n" + new Printer().printExpr(e, 0);
         }
     }
 
@@ -375,7 +379,7 @@ class Typer {
                 popLocals();
                 bb;
 
-            case EField(_, _) | ELiteral(_) | EIdent(_) | ETuple(_) | ECall(_, _) | ENew(_) | EUnop(_, _, _), EBinop(_, _, _) | EAssign(_, _):
+            case EField(_, _) | ELiteral(_) | EIdent(_) | ETuple(_) | ECall(_, _) | ENew(_) | EUnop(_, _, _), EBinop(_, _, _) | EAssign(_, _) | ESwitch(_, _):
                 var r = value(bb, e);
                 r.bb.addElement(r.expr); // some of them (e.g. literals) are not really needed
                 r.bb;
@@ -450,9 +454,6 @@ class Typer {
                     r.bb.addElement(new TExpr(TReturn(r.expr), tVoid, e.pos));
                 }
                 bbUnreachable;
-
-            case ESwitch(_, _):
-                throw "todo " + e;
 
             case EArrowFunction(_, _, _):
                 throw "todo " + e;
