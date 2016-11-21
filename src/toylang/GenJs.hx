@@ -80,8 +80,25 @@ class GenJs {
         }
     }
 
-    function generateSwitch(cond:TExpr, cases:Array<SESwitchCase>, def:Null<BasicBlock>, level:Int) {
-        throw "TODO";
+    function generateSwitch(econd:TExpr, cases:Array<SESwitchCase>, def:Null<BasicBlock>, level:Int) {
+        indent(level);
+        buf.add("switch (");
+        generateExpr(econd);
+        buf.add(") {\n");
+        for (c in cases) {
+            indent(level + 1);
+            buf.add("case ");
+            generateExpr(c.expr);
+            buf.add(":\n");
+            generateBlock(c.body, level + 2);
+        }
+        if (def != null) {
+            indent(level + 1);
+            buf.add("default:\n");
+            generateBlock(def, level + 2);
+        }
+        indent(level);
+        buf.add("}");
     }
 
     function generateLoop(head:BasicBlock, body:BasicBlock, level:Int) {
