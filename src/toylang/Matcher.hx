@@ -16,7 +16,7 @@ enum Constructor {
 enum DecisionTree {
     DFail;
     DLeaf(e:Expr);
-    DSwitch(subjects:TExpr, cases:Array<DTCase>, def:DecisionTree);
+    DSwitch(subject:TExpr, cases:Array<DTCase>, def:DecisionTree);
 }
 
 class DTCase {
