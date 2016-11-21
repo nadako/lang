@@ -43,21 +43,21 @@ class Matcher {
         var matchCases = [];
 
         function fail<T>(e:Expr):T
-            return throw "Unrecognized pattern " + (new Printer().printExpr(e, 0));
+            throw "Unrecognized pattern " + (new Printer().printExpr(e, 0));
 
         function parsePattern(e:Expr, t:Type):Pattern {
             return switch (e.kind) {
                 case ELiteral(l):
                     PConstructor(CLiteral(l));
                 case EIdent("_"):
-                    switch (follow(t)) {
+                    switch (t) {
                         case TTuple(types):
                             PTuple([for (_ in 0...types.length) PAny]);
                         case _:
                             PAny;
                     };
                 case ETuple(exprs):
-                    var subTypes = switch (follow(t)) {
+                    var subTypes = switch (t) {
                         case TTuple(types): types;
                         case _: fail(e);
                     };
@@ -65,14 +65,14 @@ class Matcher {
                         throw "Not enough arguments";
                     else if (exprs.length > subTypes.length)
                         throw "Too many arguments";
-                    PTuple([for (i in 0...exprs.length) parsePattern(exprs[i], subTypes[i])]);
+                    PTuple([for (i in 0...exprs.length) parsePattern(exprs[i], follow(subTypes[i]))]);
                 case _:
                     fail(e);
             }
         }
 
         for (c in cases) {
-            var pattern = parsePattern(c.pattern, subject.type);
+            var pattern = parsePattern(c.pattern, follow(subject.type));
             matchCases.push({
                 patterns: [pattern],
                 expr: c.expr,
