@@ -340,6 +340,9 @@ class Typer {
                 var bb = blockElement(bb, e);
                 {bb: bb, expr: new TExpr(TFakeValue, mkMono(), e.pos)};
 
+            case ESwitch(_, _):
+                throw "todo " + e;
+
             case EArrowFunction(_, _, _):
                 throw "todo " + e;
         }
@@ -376,9 +379,6 @@ class Typer {
                 var r = value(bb, e);
                 r.bb.addElement(r.expr); // some of them (e.g. literals) are not really needed
                 r.bb;
-
-            case EArrowFunction(_, _, _):
-                throw "todo " + e;
 
             case EIf(econd, ethen, eelse):
                 var r = value(bb, econd);
@@ -450,6 +450,12 @@ class Typer {
                     r.bb.addElement(new TExpr(TReturn(r.expr), tVoid, e.pos));
                 }
                 bbUnreachable;
+
+            case ESwitch(_, _):
+                throw "todo " + e;
+
+            case EArrowFunction(_, _, _):
+                throw "todo " + e;
         }
     }
 

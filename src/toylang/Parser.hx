@@ -323,6 +323,14 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
             case [{kind: TkKeyword(KwdNew), pos: pmin}, path = parseExpect(parseTypePath)]:
                 mk(ENew(path), Position.union(pmin, last.pos));
 
+            case [{kind: TkKeyword(KwdSwitch), pos: pmin}, expr = parseExpect(parseExpr)]:
+                switch stream {
+                    case [{kind: TkBraceOpen}, cases = parseRepeat(parseSwitchCase), {kind: TkBraceClose}]:
+                        mk(ESwitch(expr, cases), Position.union(pmin, last.pos));
+                    case _:
+                        unexpected();
+                }
+
             case [{kind: TkBang, pos: pmin}, expr = parseExpect(parseExpr)]:
                 mPrefixUnop(OpNot, expr, pmin);
 
@@ -331,6 +339,18 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
 
             case [v = parseVar()]:
                 mk(EVar(v.name, v.type, v.initial), v.pos);
+        }
+    }
+
+    function parseSwitchCase():Case {
+        return switch stream {
+            case [{kind: TkKeyword(KwdCase), pos: pmin}, pattern = parseExpect(parseExpr), {kind: TkColon, pos: pmax}, exprs = parseRepeat(parseExprWithSemicolon)]:
+                var pos =
+                    if (exprs.length > 0)
+                        Position.union(exprs[0].pos, exprs[exprs.length - 1].pos)
+                    else
+                        Position.union(pmin, pmax);
+                new Case(pattern, mk(EBlock(exprs), pos));
         }
     }
 

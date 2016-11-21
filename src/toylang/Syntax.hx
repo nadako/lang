@@ -58,6 +58,8 @@ enum Keyword {
     KwdReturn;
     KwdNew;
     KwdThis;
+    KwdSwitch;
+    KwdCase;
 }
 
 enum Literal {
@@ -177,4 +179,15 @@ enum ExprKind {
     EBreak;
     EContinue;
     EReturn(e:Null<Expr>);
+    ESwitch(expr:Expr, cases:Array<Case>);
+}
+
+class Case {
+    public var pattern:Expr;
+    public var expr:Expr;
+
+    public function new(pattern, expr) {
+        this.pattern = pattern;
+        this.expr = expr;
+    }
 }

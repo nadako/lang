@@ -1,11 +1,12 @@
 package toylang;
 
+using StringTools;
 import toylang.Syntax;
 
 class Printer {
     var indentString:String;
 
-    public function new(indentString = "\t") {
+    public function new(indentString = "  ") {
         this.indentString = indentString;
     }
 
@@ -106,6 +107,15 @@ class Printer {
         return buf.toString();
     }
 
+    function printBlockExpr(buf:StringBuf, expr:Expr, level:Int) {
+        buf.add(indent(level));
+        var e = printExpr(expr, level);
+        buf.add(e);
+        if (e.fastCodeAt(e.length - 1) != "}".code)
+            buf.add(";");
+        buf.add("\n");
+    }
+
     public function printExpr(expr:Expr, level:Int):String {
         return switch (expr.kind) {
             case EBlock(exprs):
@@ -117,9 +127,7 @@ class Printer {
                         fst = false;
                         buf.add("\n");
                     }
-                    buf.add(indent(level + 1));
-                    buf.add(printExpr(e, level + 1));
-                    buf.add(";\n");
+                    printBlockExpr(buf, e, level + 1);
                 }
                 if (!fst)
                     buf.add(indent(level));
@@ -259,6 +267,28 @@ class Printer {
                 } else {
                     buf.add(printTypePath(path));
                 }
+                buf.toString();
+
+            case ESwitch(expr, cases):
+                var buf = new StringBuf();
+                buf.add("switch ");
+                buf.add(printExpr(expr, level));
+                buf.add(" {\n");
+                for (c in cases) {
+                    buf.add(indent(level + 1));
+                    buf.add("case ");
+                    buf.add(printExpr(c.pattern, level + 1));
+                    buf.add(":\n");
+                    switch (c.expr.kind) {
+                        case EBlock(exprs):
+                            for (e in exprs)
+                                printBlockExpr(buf, e, level + 2);
+                        case _:
+                            printBlockExpr(buf, c.expr, level + 2);
+                    }
+                }
+                buf.add(indent(level));
+                buf.add("}");
                 buf.toString();
         }
     }
