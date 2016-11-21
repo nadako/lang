@@ -218,7 +218,7 @@ class Printer {
                 }
                 buf.toString();
 
-            case EVar(name, type, initial):
+            case EVar(VName(name), type, initial):
                 printVar(name, type, initial, level);
 
             case EParens(e):

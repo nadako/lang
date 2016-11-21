@@ -366,7 +366,11 @@ class Typer {
 
     function blockElement(bb:BasicBlock, e:Expr):BasicBlock {
         return switch (e.kind) {
-            case EVar(name, type, einitial):
+            case EVar(bind, type, einitial):
+                var name = switch (bind) {
+                    case VName(name): name;
+                };
+
                 var type = typeType(type);
                 var v = declareVar(bb, name, type, e.pos);
                 if (einitial != null) {

@@ -338,7 +338,7 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
                 mPrefixUnop(OpNeg, expr, pmin);
 
             case [v = parseVar()]:
-                mk(EVar(v.name, v.type, v.initial), v.pos);
+                mk(EVar(VName(v.name), v.type, v.initial), v.pos);
         }
     }
 

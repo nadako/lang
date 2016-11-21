@@ -166,7 +166,7 @@ enum ExprKind {
     ELiteral(literal:Literal);
     EField(expr:Expr, field:String);
     ECall(expr:Expr, args:Array<Expr>);
-    EVar(name:String, type:Null<SyntaxType>, initial:Null<Expr>);
+    EVar(binding:VarBinding, type:Null<SyntaxType>, initial:Null<Expr>);
     ETuple(exprs:Array<Expr>);
     EParens(expr:Expr);
     ENew(path:Null<TypePath>);
@@ -180,6 +180,10 @@ enum ExprKind {
     EContinue;
     EReturn(e:Null<Expr>);
     ESwitch(expr:Expr, cases:Array<Case>);
+}
+
+enum VarBinding {
+    VName(name:String);
 }
 
 class Case {
