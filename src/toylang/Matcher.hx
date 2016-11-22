@@ -145,7 +145,7 @@ class Matcher {
                     case TTuple(types):
                         var subSubjects = [for (i in 0...types.length) new TExpr(TTupleElement(subject, i), types[i], subject.pos)];
                         subject = subSubjects[0];
-                        subjects = subSubjects.concat(subjects);
+                        subjects = subSubjects.slice(1).concat(subjects);
                         var newCases = [];
                         for (c in cases) {
                             switch (c.patterns[0]) {

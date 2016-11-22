@@ -1,5 +1,6 @@
 function doStuff() {
-    switch (1,2) {
+    var v = (1,2);
+    switch v {
         case (1,2): trace("hi");
         case _: trace("bleh");
     }
