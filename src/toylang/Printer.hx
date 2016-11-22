@@ -209,15 +209,8 @@ class Printer {
                 else
                     "return " + printExpr(e, level);
 
-            case ELiteral(LString(s)):
-                var buf = new StringBuf();
-                buf.add("\"");
-                buf.add(Lexer.escapeString(s));
-                buf.add("\"");
-                buf.toString();
-
-            case ELiteral(LInt(s)):
-                s;
+            case ELiteral(l):
+                printLiteral(l);
 
             case EIf(cond, then, els):
                 var buf = new StringBuf();
@@ -303,6 +296,20 @@ class Printer {
                 buf.add(indent(level));
                 buf.add("}");
                 buf.toString();
+        }
+    }
+
+    public static function printLiteral(l:Literal):String {
+        return switch (l) {
+            case LString(s):
+                var buf = new StringBuf();
+                buf.add("\"");
+                buf.add(Lexer.escapeString(s));
+                buf.add("\"");
+                buf.toString();
+
+            case LInt(s):
+                s;
         }
     }
 

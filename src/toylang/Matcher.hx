@@ -79,14 +79,15 @@ class Matcher {
             });
         }
 
-        function getSigma(cases:Array<MatcherCase>):Array<Constructor> {
+        function getSigma(cases:Array<MatcherCase>, type:Type):Array<Constructor> {
             var result = new haxe.ds.EnumValueMap();
             for (c in cases) {
                 switch (c.patterns[0]) {
-                    case PTuple(_): throw "todo";
                     case PAny:
                     case PConstructor(ctor):
                         result.set(ctor, true);
+                    case PTuple(_):
+                        throw "unexpected tuple pattern (must be expanded before)";
                 }
             }
             return [for (c in result.keys()) c];
@@ -100,7 +101,10 @@ class Matcher {
                         result.push({patterns: c.patterns.slice(1), expr: c.expr});
                     case PConstructor(thatCtor) if (std.Type.enumEq(ctor, thatCtor)):
                         result.push({patterns: c.patterns.slice(1), expr: c.expr});
-                    case _:
+                    case PTuple(patterns):
+                        var patterns = patterns.concat(c.patterns.slice(1));
+                        result.push({patterns: patterns, expr: c.expr});
+                    case PConstructor(_):
                 }
             }
             return result;
@@ -110,13 +114,22 @@ class Matcher {
             var result = [];
             for (c in cases) {
                 switch (c.patterns[0]) {
-                    case PTuple(_): throw "todo";
-                    case PConstructor(_):
                     case PAny:
                         result.push({patterns: c.patterns.slice(1), expr: c.expr});
+                    case PTuple(pats) if (Lambda.foreach(pats, function(p) return p.match(PAny))):
+                        result.push({patterns: c.patterns.slice(1), expr: c.expr});
+                    case PTuple(_):
+                    case PConstructor(_):
                 }
             }
             return result;
+        }
+
+        function getSubSubjects(ctor:Constructor, subject:TExpr):Array<TExpr> {
+            return switch (ctor) {
+                case CLiteral(_):
+                    [];
+            }
         }
 
         function compile(subjects:Array<TExpr>, cases:Array<MatcherCase>):DecisionTree {
@@ -125,12 +138,32 @@ class Matcher {
             } else if (Lambda.foreach(cases[0].patterns, function(p) return p.match(PAny))) {
                 DLeaf(cases[0].expr);
             } else {
-                var sigma = getSigma(cases);
                 var subject = subjects[0];
                 var subjects = subjects.slice(1);
+
+                switch (follow(subject.type)) {
+                    case TTuple(types):
+                        var subSubjects = [for (i in 0...types.length) new TExpr(TTupleElement(subject, i), types[i], subject.pos)];
+                        subject = subSubjects[0];
+                        subjects = subSubjects.concat(subjects);
+                        var newCases = [];
+                        for (c in cases) {
+                            switch (c.patterns[0]) {
+                                case PTuple(patterns):
+                                    newCases.push({patterns: patterns.concat(c.patterns.slice(1)), expr: c.expr});
+                                case _:
+                                    newCases.push(c);
+                            }
+                        }
+                        cases = newCases;
+                    case _:
+                }
+
+                var sigma = getSigma(cases, subject.type);
                 var ctorCases = [];
                 for (ctor in sigma) {
                     var spec = getSpecialized(ctor, cases);
+                    var subjects = getSubSubjects(ctor, subject).concat(subjects);
                     var dt = compile(subjects, spec);
                     ctorCases.push(new DTCase(ctor, dt));
                 }
@@ -145,6 +178,12 @@ class Matcher {
         return dt;
     }
 
+    static function ctorToString(c:Constructor):String {
+        return switch (c) {
+            case CLiteral(l):
+                'Literal(${Printer.printLiteral(l)})';
+        }
+    }
 
     static function makeDTGraph(dt:DecisionTree) {
         var nextId = 0;
@@ -161,7 +200,7 @@ class Matcher {
                     nodes.push({id: nodeId, label: 'Switch(${texprToString(subj)})'});
                     for (c in cases) {
                         var caseId = loop(c.dt);
-                        edges.push({from: nodeId, to: caseId, label: '${c.ctor}'});
+                        edges.push({from: nodeId, to: caseId, label: '${ctorToString(c.ctor)}'});
                     }
                     var defId = loop(def);
                     edges.push({from: nodeId, to: defId, label: 'default'});
