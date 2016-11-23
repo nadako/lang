@@ -224,10 +224,10 @@ class Typer {
                 throw "empty blocks are not allowed in a value place";
 
             case EBlock(el):
-                var last = el.pop();
+                var last = el[el.length - 1];
                 pushLocals();
-                for (e in el)
-                    bb = blockElement(bb, e);
+                for (i in 0...el.length - 1)
+                    bb = blockElement(bb, el[i]);
                 var r = value(bb, last);
                 popLocals();
                 r;
