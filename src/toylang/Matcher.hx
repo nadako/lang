@@ -272,9 +272,7 @@ class Matcher {
             }
         }
 
-        var dt = compile([subject], matchCases);
-        makeDTGraph(dt);
-        return dt;
+        return compile([subject], matchCases);
     }
 
     static function ctorToString(c:Constructor):String {
@@ -284,7 +282,7 @@ class Matcher {
         }
     }
 
-    static function makeDTGraph(dt:DecisionTree) {
+    public static function makeDTGraph(dt:DecisionTree) {
         var nextId = 0;
         var nodes = [];
         var edges = [];

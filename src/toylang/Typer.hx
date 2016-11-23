@@ -351,15 +351,34 @@ class Typer {
                 var bb = blockElement(bb, e);
                 {bb: bb, expr: new TExpr(TFakeValue, mkMono(), e.pos)};
 
-            case ESwitch(_, _) | EArrowFunction(_, _, _):
+            case ESwitch(evalue, cases):
+                var tmpResultVar = declareVar(bb, "tmpSwitchResult" + (tmpCount++), mkMono(), e.pos);
+
+                var tmpVar = declareVar(bb, "tmp" + (tmpCount++), mkMono(), e.pos);
+                var r = value(bb, evalue);
+                assignVar(r.bb, tmpVar, r.expr, e.pos);
+
+                var matcher = new Matcher(this);
+                var dt = matcher.match(new TExpr(TLocal(tmpVar), tmpVar.type, e.pos), cases);
+                Matcher.makeDTGraph(dt);
+
+                var bbNext = pattern(r.bb, dt, e.pos, function(bb, expr) {
+                    var r = value(bb, expr);
+                    assignVar(r.bb, tmpResultVar, r.expr, expr.pos);
+                    return r.bb;
+                });
+
+                {bb: bbNext, expr: new TExpr(TLocal(tmpResultVar), tmpResultVar.type, e.pos)}
+
+            case EArrowFunction(_, _, _):
                 throw "TODO:\n" + new Printer().printExpr(e, 0);
         }
     }
 
-    function pattern(bb:BasicBlock, dt:DecisionTree, pos:Position):BasicBlock {
+    function pattern<T>(bb:BasicBlock, dt:DecisionTree, pos:Position, processLeaf:BasicBlock->Expr->BasicBlock):BasicBlock {
         return switch (dt) {
             case DLeaf(expr):
-                blockElement(bb, expr);
+                processLeaf(bb, expr);
 
             case DSwitch(subject, cases, def):
                 bb.addElement(subject);
@@ -371,7 +390,7 @@ class Typer {
                     var bbCase = new BasicBlock();
                     bb.addEdge(bbCase, 'case ${c.ctor}');
 
-                    var bb = pattern(bbCase, c.dt, pos);
+                    var bb = pattern(bbCase, c.dt, pos, processLeaf);
                     bb.addEdge(bbNext, "next");
 
                     var casePatternExpr = switch (c.ctor) {
@@ -391,7 +410,7 @@ class Typer {
                     bbDef = new BasicBlock();
                     bb.addEdge(bbDef, 'default');
 
-                    var bb = pattern(bbDef, def, pos);
+                    var bb = pattern(bbDef, def, pos, processLeaf);
                     bb.addEdge(bbNext, "next");
                 }
 
@@ -507,7 +526,7 @@ class Typer {
                 var tmpLocal = new TExpr(TLocal(tmpVar), tmpVar.type, e.pos);
                 var matcher = new Matcher(this);
                 var dt = matcher.match(tmpLocal, cases);
-                pattern(r.bb, dt, e.pos);
+                pattern(r.bb, dt, e.pos, blockElement);
 
             case EWhile(econd, ebody):
                 var bbLoopHead = new BasicBlock();
