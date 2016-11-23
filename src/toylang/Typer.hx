@@ -366,8 +366,28 @@ class Typer {
 
                 {bb: bbNext, expr: new TExpr(TLocal(tmpResultVar), tmpResultVar.type, e.pos)}
 
-            case EArrowFunction(_, _, _):
-                throw "TODO:\n" + new Printer().printExpr(e, 0);
+            case EArrowFunction(args, ret, expr):
+
+                var locals = pushLocals();
+                var typedArgs = [];
+                for (arg in args) {
+                    var type = typeType(arg.type);
+                    typedArgs.push(new TFunctionArg(arg.name, type));
+                    locals[arg.name] = new TVar(arg.name, type);
+                }
+
+                var oldLoopStack = loopStack;
+                loopStack = new GenericStack();
+
+                var bbRoot = new BasicBlock();
+                block(bbRoot, new Expr(EReturn(expr), expr.pos));
+
+                popLocals();
+                loopStack = oldLoopStack;
+
+                var ret = typeType(ret);
+
+                {bb: bb, expr: new TExpr(TFunction(typedArgs, ret, bbRoot), TFun(typedArgs, ret), e.pos)};
         }
     }
 

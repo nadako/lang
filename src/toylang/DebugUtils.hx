@@ -147,7 +147,7 @@ class DebugUtils {
             case TFakeValue:
                 throw 'basic block element expressions cannot contain ' + e.kind.getName();
             case TFunction(_, _):
-                throw "todo" + e; // ???
+                return "fun" + e; // ???
         }
     }
 }

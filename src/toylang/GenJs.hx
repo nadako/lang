@@ -65,7 +65,7 @@ class GenJs {
     function generateBranch(econd:TExpr, then:BasicBlock, els:Null<BasicBlock>, level:Int) {
         indent(level);
         buf.add("if (");
-        generateExpr(econd);
+        generateExpr(econd, level);
         buf.add(") {\n");
         generateBlock(then, level + 1);
         indent(level);
@@ -83,12 +83,12 @@ class GenJs {
     function generateSwitch(econd:TExpr, cases:Array<SESwitchCase>, def:Null<BasicBlock>, level:Int) {
         indent(level);
         buf.add("switch (");
-        generateExpr(econd);
+        generateExpr(econd, level);
         buf.add(") {\n");
         for (c in cases) {
             indent(level + 1);
             buf.add("case ");
-            generateExpr(c.expr);
+            generateExpr(c.expr, level);
             buf.add(":\n");
             generateBlock(c.body, level + 2);
             indent(level + 2);
@@ -114,7 +114,7 @@ class GenJs {
 
         indent(level + 1);
         buf.add("if (!(");
-        generateExpr(head.elements[head.elements.length - 1]);
+        generateExpr(head.elements[head.elements.length - 1], level);
         buf.add(")) break;\n");
 
         generateBlock(body, level + 1);
@@ -130,7 +130,7 @@ class GenJs {
 
     function generateStatement(e:TExpr, level:Int) {
         indent(level);
-        generateExpr(e);
+        generateExpr(e, level);
         buf.add(";\n");
     }
 
@@ -140,7 +140,7 @@ class GenJs {
         }
     }
 
-    function generateExpr(e:TExpr) {
+    function generateExpr(e:TExpr, level:Int) {
         switch (e.kind) {
             case TThis:
                 buf.add("this");
@@ -157,60 +157,60 @@ class GenJs {
                 buf.add(v.name);
                 if (evalue != null) {
                     buf.add(" = ");
-                    generateExpr(evalue);
+                    generateExpr(evalue, level);
                 }
             case TAssign(ATVar(v), evalue):
                 buf.add(v.name);
                 buf.add(" = ");
-                generateExpr(evalue);
+                generateExpr(evalue, level);
             case TAssign(ATField(eobj, f), evalue):
-                generateExpr(eobj);
+                generateExpr(eobj, level);
                 buf.add(".");
                 buf.add(fieldName(f));
                 buf.add(" = ");
-                generateExpr(evalue);
+                generateExpr(evalue, level);
             case TVarField(eobj, f):
-                generateExpr(eobj);
+                generateExpr(eobj, level);
                 buf.add(".");
                 buf.add(fieldName(f));
             case TMethodClosure(eobj, f):
                 buf.add("(function(o) { return o.");
                 buf.add(fieldName(f));
                 buf.add(".bind(o); })(");
-                generateExpr(eobj);
+                generateExpr(eobj, level);
                 buf.add(")");
             case TBinop(op, left, right):
-                generateExpr(left);
+                generateExpr(left, level);
                 buf.add(" ");
                 buf.add(printBinop(op));
                 buf.add(" ");
-                generateExpr(right);
+                generateExpr(right, level);
             case TUnop(op, expr, postfix):
                 if (!postfix)
                     buf.add(printUnop(op));
                 buf.add("(");
-                generateExpr(expr);
+                generateExpr(expr, level);
                 buf.add(")");
                 if (postfix)
                     buf.add(printUnop(op));
             case TCall(eobj, args):
-                generateExpr(eobj);
+                generateExpr(eobj, level);
                 buf.add("(");
-                generateSeparated(args, generateExpr, ", ");
+                generateSeparated(args, generateExpr.bind(_,level), ", ");
                 buf.add(")");
             case TMethodCall(eobj, f, args):
-                generateExpr(eobj);
+                generateExpr(eobj, level);
                 buf.add(".");
                 buf.add(fieldName(f));
                 buf.add("(");
-                generateSeparated(args, generateExpr, ", ");
+                generateSeparated(args, generateExpr.bind(_,level), ", ");
                 buf.add(")");
             case TTuple(values):
                 buf.add("[");
-                generateSeparated(values, generateExpr, ", ");
+                generateSeparated(values, generateExpr.bind(_,level), ", ");
                 buf.add("]");
             case TTupleElement(eobj, index):
-                generateExpr(eobj);
+                generateExpr(eobj, level);
                 buf.add("[");
                 buf.add(index);
                 buf.add("]");
@@ -218,9 +218,16 @@ class GenJs {
                 buf.add("return");
                 if (v != null) {
                     buf.add(" ");
-                    generateExpr(v);
+                    generateExpr(v, level);
                 }
-            case TNew(_) | TFunction(_):
+            case TFunction(args, ret, cfg):
+                buf.add("function(");
+                generateSeparated(args, function(a) buf.add(a.name), ", ");
+                buf.add(") {\n");
+                generateBlock(cfg, level + 1);
+                indent(level);
+                buf.add("}");
+            case TNew(_):
                 throw "todo " + e;
             case TFakeValue:
                 throw "unexpected " + e.kind.getName();

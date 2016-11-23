@@ -111,7 +111,7 @@ enum TExprKind {
     TMethodCall(eobj:TExpr, f:FieldAccess, args:Array<TExpr>);
     TLiteral(l:TLiteral);
     TReturn(e:Null<TExpr>); // todo: remove this
-    TFunction(args:Array<TFunctionArg>, ret:Type, expr:TExpr);
+    TFunction(args:Array<TFunctionArg>, ret:Type, cfg:BasicBlock);
     TAssign(target:AssignTarget, value:TExpr);
     TNew(cls:TClassDecl);
     TBinop(op:Binop, left:TExpr, right:TExpr);

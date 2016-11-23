@@ -1,7 +1,8 @@
-function main(v:Bool) {
-    trace(switch v {
-        case true: "yes";
-        case false: "no";
-        case _: "what?";
-    });
+function main() {
+    var f = \x => switch(x) {
+        case 1: "hi";
+        case 2: "bye";
+        case _: "meh";
+    };
+    var v = f(10);
 }
