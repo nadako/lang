@@ -57,12 +57,7 @@ class Matcher {
                     var l = switch (e.kind) { case TLiteral(l): l; default: throw false; };
                     PConstructor(CLiteral(l));
                 case EIdent("_"):
-                    switch (t) {
-                        case TTuple(types):
-                            PTuple([for (_ in 0...types.length) PAny]);
-                        case _:
-                            PAny;
-                    };
+                    PAny;
                 case ETuple(exprs):
                     var subTypes = switch (t) {
                         case TTuple(types): types;
@@ -139,12 +134,61 @@ class Matcher {
             }
         }
 
+        function expandTuple(subjects:Array<TExpr>, cases:Array<MatcherCase>) {
+            var subject = subjects[0];
+            switch (follow(subject.type)) {
+                case TTuple(types):
+                    var subSubjects = [for (i in 0...types.length) new TExpr(TTupleElement(subject, i), types[i], subject.pos)];
+                    var newCases = [];
+                    for (c in cases) {
+                        var subPatterns =
+                            switch (c.patterns[0]) {
+                                case PAny:
+                                    [for (_ in 0...types.length) PAny];
+                                case PTuple(patterns):
+                                    patterns;
+                                case p:
+                                    throw 'Unexpected pattern $p';
+                            }
+                        newCases.push({
+                            expr: c.expr,
+                            patterns: subPatterns.concat(c.patterns.slice(1))
+                        });
+                    }
+                    return {subjects: subSubjects.concat(subjects.slice(1)), cases: newCases};
+                case _:
+                    return null;
+            }
+        }
+
+        function selectColumn(subjects:Array<TExpr>, cases:Array<MatcherCase>) {
+            return {subjects: subjects, cases: cases};
+        }
+
         function compile(subjects:Array<TExpr>, cases:Array<MatcherCase>):DecisionTree {
             return if (cases.length == 0) {
                 DFail;
             } else if (Lambda.foreach(cases[0].patterns, function(p) return p.match(PAny))) {
                 DLeaf(cases[0].expr);
             } else {
+                while (true) {
+                    // swap columns if needed
+                    var r = selectColumn(subjects, cases);
+                    subjects = r.subjects;
+                    cases = r.cases;
+
+                    // expand tuple in first column
+                    var r = expandTuple(subjects, cases);
+                    if (r == null) {
+                        // if there was no tuple - start matching first column normally
+                        break;
+                    }
+
+                    // if it was tuple as well - continue selecting best column in the next loop cycle
+                    subjects = r.subjects;
+                    cases = r.cases;
+                }
+
                 var subject = subjects[0];
                 var subjects = subjects.slice(1);
 
