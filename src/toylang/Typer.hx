@@ -367,7 +367,6 @@ class Typer {
                 {bb: bbNext, expr: new TExpr(TLocal(tmpResultVar), tmpResultVar.type, e.pos)}
 
             case EArrowFunction(args, ret, expr):
-
                 var locals = pushLocals();
                 var typedArgs = [];
                 for (arg in args) {
@@ -658,26 +657,6 @@ class Typer {
         }
         return new TExpr(kind, type, pos);
     }
-
-    // function typeFunctionExpr(args:Array<FunctionArg>, ret:Null<SyntaxType>, expr:Expr, pos:Position):TExpr {
-    //     var locals = pushLocals();
-
-    //     var typedArgs = [];
-    //     for (arg in args) {
-    //         var type = typeType(arg.type);
-    //         typedArgs.push(new TFunctionArg(arg.name, type));
-    //         locals[arg.name] = new TVar(arg.name, type);
-    //     }
-
-    //     var expr = typeExpr(expr);
-
-    //     popLocals();
-
-    //     var ret = typeType(ret);
-    //     unifyThrow(expr.type, ret, pos);
-
-    //     return new TExpr(TFunction(typedArgs, ret, expr), TFun(typedArgs, ret), pos);
-    // }
 
     function call(bb:BasicBlock, eobj:Expr, eargs:Array<Expr>, pos:Position):{bb:BasicBlock, expr:TExpr} {
         var eobj = {
