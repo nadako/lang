@@ -73,6 +73,17 @@ class DebugUtils {
         }
     }
 
+    public static function literalToString(l:TLiteral):String {
+        return switch (l) {
+            case LInt(i):
+                '$i';
+            case LBool(b):
+                if (b) "true" else "false";
+            case LString(s):
+                '"${Lexer.escapeString(s)}"';
+        };
+    }
+
     public static function texprToString(e:TExpr):String {
         return switch (e.kind) {
             case TVar(v, e):
@@ -94,12 +105,8 @@ class DebugUtils {
                         texprToString(eobj) + "." + fieldName;
                 }
                 '$targetStr = ${texprToString(e)}';
-            case TLiteral(LInt(i)):
-                '$i';
-            case TLiteral(LBool(b)):
-                if (b) "true" else "false";
-            case TLiteral(LString(s)):
-                '"${Lexer.escapeString(s)}"';
+            case TLiteral(l):
+                literalToString(l);
             case TCall(eobj, args):
                 '${texprToString(eobj)}(${args.map(texprToString).join(", ")})';
             case TTuple(values):

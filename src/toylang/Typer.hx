@@ -169,7 +169,7 @@ class Typer {
         bb.addElement(new TExpr(TAssign(ATVar(v), e), v.type, pos));
     }
 
-    function typeLiteral(l:Literal, pos:Position):TExpr {
+    public function typeLiteral(l:Literal, pos:Position):TExpr {
         return switch (l) {
             case LString(s):
                 new TExpr(TLiteral(LString(s)), tString, pos);
@@ -375,7 +375,12 @@ class Typer {
 
                     var casePatternExpr = switch (c.ctor) {
                         case CLiteral(l):
-                            typeLiteral(l, pos);
+                            var t = switch (l) {
+                                case LBool(_): tBool;
+                                case LInt(_): tInt;
+                                case LString(_): tString;
+                            }
+                            new TExpr(TLiteral(l), t, pos);
                     };
                     cfgCases.push({expr: casePatternExpr, body: bbCase});
                 }
@@ -496,7 +501,7 @@ class Typer {
 
             case ESwitch(evalue, cases):
                 var r = value(bb, evalue);
-                var matcher = new Matcher();
+                var matcher = new Matcher(this);
                 var dt = matcher.match(r.expr, cases);
                 pattern(r.bb, dt, e.pos);
 
@@ -767,12 +772,12 @@ class Typer {
         }
     }
 
-    static function unifyThrow(a, b, pos) {
+    public static function unifyThrow(a, b, pos) {
         if (!unify(a, b))
             throw new TyperError(UnificationError(a, b), pos);
     }
 
-    static function unify(a:Type, b:Type):Bool {
+    public static function unify(a:Type, b:Type):Bool {
         if (a == b)
             return true;
         return switch [a, b] {

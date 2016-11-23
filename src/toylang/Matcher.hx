@@ -12,7 +12,7 @@ enum Pattern {
 }
 
 enum Constructor {
-    CLiteral(l:Literal);
+    CLiteral(l:TLiteral);
 }
 
 enum DecisionTree {
@@ -37,7 +37,11 @@ typedef MatcherCase = {
 }
 
 class Matcher {
-    public function new() {}
+    var typer:Typer;
+
+    public function new(typer:Typer) {
+        this.typer = typer;
+    }
 
     public function match(subject:TExpr, cases:Array<Case>):DecisionTree {
         var matchCases = [];
@@ -48,6 +52,9 @@ class Matcher {
         function parsePattern(e:Expr, t:Type):Pattern {
             return switch (e.kind) {
                 case ELiteral(l):
+                    var e = typer.typeLiteral(l, e.pos);
+                    Typer.unifyThrow(e.type, t, e.pos);
+                    var l = switch (e.kind) { case TLiteral(l): l; default: throw false; };
                     PConstructor(CLiteral(l));
                 case EIdent("_"):
                     switch (t) {
@@ -181,7 +188,7 @@ class Matcher {
     static function ctorToString(c:Constructor):String {
         return switch (c) {
             case CLiteral(l):
-                'Literal(${Printer.printLiteral(l)})';
+                'Literal(${DebugUtils.literalToString(l)})';
         }
     }
 
