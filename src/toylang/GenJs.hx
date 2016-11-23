@@ -91,11 +91,15 @@ class GenJs {
             generateExpr(c.expr);
             buf.add(":\n");
             generateBlock(c.body, level + 2);
+            indent(level + 2);
+            buf.add("break;\n");
         }
         if (def != null) {
             indent(level + 1);
             buf.add("default:\n");
             generateBlock(def, level + 2);
+            indent(level + 2);
+            buf.add("break;\n");
         }
         indent(level);
         buf.add("}\n");
