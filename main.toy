@@ -1,6 +1,5 @@
 function doStuff() {
-    var v = ((1,2),3);
-    switch v {
+    switch ((1,2),3) {
         case ((1,2),3): 1;
         case ((1,_),3): 2;
         case ((_,1),_): 3;

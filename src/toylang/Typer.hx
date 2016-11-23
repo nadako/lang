@@ -166,6 +166,7 @@ class Typer {
     }
 
     function assignVar(bb:BasicBlock, v:TVar, e:TExpr, pos:Position) {
+        unifyThrow(e.type, v.type, pos);
         bb.addElement(new TExpr(TAssign(ATVar(v), e), v.type, pos));
     }
 
@@ -500,9 +501,12 @@ class Typer {
                 bbNext;
 
             case ESwitch(evalue, cases):
+                var tmpVar = declareVar(bb, "tmp" + (tmpCount++), mkMono(), e.pos);
                 var r = value(bb, evalue);
+                assignVar(r.bb, tmpVar, r.expr, e.pos);
+                var tmpLocal = new TExpr(TLocal(tmpVar), tmpVar.type, e.pos);
                 var matcher = new Matcher(this);
-                var dt = matcher.match(r.expr, cases);
+                var dt = matcher.match(tmpLocal, cases);
                 pattern(r.bb, dt, e.pos);
 
             case EWhile(econd, ebody):
