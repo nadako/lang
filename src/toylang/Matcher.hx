@@ -161,6 +161,21 @@ class Matcher {
             }
         }
 
+        function isWildCardPattern(p:Pattern):Bool {
+            return switch (p) {
+                case PAny:
+                    true;
+                case PTuple(pl):
+                    for (p in pl) {
+                        if (!isWildCardPattern(p))
+                            return false;
+                    }
+                    true;
+                case PConstructor(_):
+                    false;
+            }
+        }
+
         function selectColumn(subjects:Array<TExpr>, cases:Array<MatcherCase>) {
             var numCols = cases[0].patterns.length;
             var scores = [for (i in 0...numCols) 0];
@@ -169,7 +184,7 @@ class Matcher {
                 for (i in 0...numCols) {
                     switch (c.patterns[i]) {
                         case PAny:
-                        case PTuple(pats) if (Lambda.foreach(pats, function(p) return p.match(PAny))):
+                        case PTuple(pats) if (Lambda.foreach(pats, isWildCardPattern)):
                         case PConstructor(_) | PTuple(_):
                             if (first || scores[i] > 0)
                                 scores[i]++;
@@ -197,10 +212,11 @@ class Matcher {
             return {subjects: subjects, cases: cases};
         }
 
+
         function compile(subjects:Array<TExpr>, cases:Array<MatcherCase>):DecisionTree {
             return if (cases.length == 0) {
                 DFail;
-            } else if (Lambda.foreach(cases[0].patterns, function(p) return p.match(PAny))) {
+            } else if (Lambda.foreach(cases[0].patterns, isWildCardPattern)) {
                 DLeaf(cases[0].expr);
             } else {
                 while (true) {
