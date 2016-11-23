@@ -320,7 +320,7 @@ class Typer {
                     throw "if in a value place must have else branch";
 
                 var type = mkMono();
-                var tmpVar = declareVar(bb, "tmp" + (tmpCount++), type, e.pos);
+                var tmpVar = declareVar(bb, "tmpIfElseResult" + (tmpCount++), type, e.pos);
 
                 var r = value(bb, econd);
                 r.bb.addElement(r.expr);
@@ -354,7 +354,7 @@ class Typer {
             case ESwitch(evalue, cases):
                 var tmpResultVar = declareVar(bb, "tmpSwitchResult" + (tmpCount++), mkMono(), e.pos);
 
-                var tmpVar = declareVar(bb, "tmp" + (tmpCount++), mkMono(), e.pos);
+                var tmpVar = declareVar(bb, "tmpSwitchValue" + (tmpCount++), mkMono(), e.pos);
                 var r = value(bb, evalue);
                 assignVar(r.bb, tmpVar, r.expr, e.pos);
 
@@ -520,7 +520,7 @@ class Typer {
                 bbNext;
 
             case ESwitch(evalue, cases):
-                var tmpVar = declareVar(bb, "tmp" + (tmpCount++), mkMono(), e.pos);
+                var tmpVar = declareVar(bb, "tmpSwitchValue" + (tmpCount++), mkMono(), e.pos);
                 var r = value(bb, evalue);
                 assignVar(r.bb, tmpVar, r.expr, e.pos);
                 var tmpLocal = new TExpr(TLocal(tmpVar), tmpVar.type, e.pos);

@@ -1,6 +1,8 @@
-function doStuff(v:(Int,Int)) {
-    trace(switch (v) {
-        case (1,3): "yes";
-        case _: "no";
+function main(v:(Int,String)) {
+    trace(switch v {
+        case (1, "hi"): "HI";
+        case (2, "bye"): "BYE";
+        case (_, "sup"): "SUP";
+        case _: "bleh";
     });
 }
