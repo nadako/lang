@@ -162,6 +162,38 @@ class Matcher {
         }
 
         function selectColumn(subjects:Array<TExpr>, cases:Array<MatcherCase>) {
+            var numCols = cases[0].patterns.length;
+            var scores = [for (i in 0...numCols) 0];
+            var first = true;
+            for (c in cases) {
+                for (i in 0...numCols) {
+                    switch (c.patterns[i]) {
+                        case PAny:
+                        case PTuple(pats) if (Lambda.foreach(pats, function(p) return p.match(PAny))):
+                        case PConstructor(_) | PTuple(_):
+                            if (first || scores[i] > 0)
+                                scores[i]++;
+                    }
+                }
+                first = false;
+            }
+            var col = 0;
+            for (i in 1...numCols) {
+                if (scores[i] > scores[col])
+                    col = i;
+            }
+
+            if (col > 0) {
+                // swap columns
+                var subj = subjects[col];
+                subjects[col] = subjects[0];
+                subjects[0] = subj;
+                for (c in cases) {
+                    var pat = c.patterns[col];
+                    c.patterns[col] = c.patterns[0];
+                    c.patterns[0] = pat;
+                }
+            }
             return {subjects: subjects, cases: cases};
         }
 

@@ -1,7 +1,9 @@
 function doStuff() {
     var v = ((1,2),3);
     switch v {
-        case ((1,2),3): trace("hi");
-        case _: trace("bleh");
+        case ((1,2),3): 1;
+        case ((1,_),3): 2;
+        case ((_,1),_): 3;
+        case _: 4;
     }
 }
