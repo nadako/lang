@@ -311,6 +311,12 @@ class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> impl
             case [{kind: TkKeyword(KwdWhile), pos: pmin}, {kind: TkParenOpen}, econd = parseExpr(), {kind: TkParenClose}, ebody = parseExpr()]:
                 mk(EWhile(econd, ebody), Position.union(pmin, last.pos));
 
+            case [{kind: TkKeyword(KwdTrue)}]:
+                mk(ELiteral(LBool(true)), last.pos);
+
+            case [{kind: TkKeyword(KwdFalse)}]:
+                mk(ELiteral(LBool(false)), last.pos);
+
             case [{kind: TkKeyword(KwdBreak)}]:
                 mk(EBreak, last.pos);
 

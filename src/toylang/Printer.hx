@@ -310,6 +310,9 @@ class Printer {
 
             case LInt(s):
                 s;
+
+            case LBool(b):
+                if (b) "true" else "false";
         }
     }
 

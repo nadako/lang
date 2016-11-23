@@ -60,11 +60,14 @@ enum Keyword {
     KwdThis;
     KwdSwitch;
     KwdCase;
+    KwdTrue;
+    KwdFalse;
 }
 
 enum Literal {
     LString(s:String);
     LInt(s:String);
+    LBool(b:Bool);
 }
 
 class Decl {

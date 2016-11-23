@@ -179,6 +179,8 @@ class Typer {
                 if (i == null)
                     throw 'Invalid integer $i';
                 new TExpr(TLiteral(LInt(i)), tInt, pos);
+            case LBool(b):
+                new TExpr(TLiteral(LBool(b)), tBool, pos);
         }
     }
 
@@ -189,12 +191,6 @@ class Typer {
 
             case ELiteral(l):
                 {bb: bb, expr: typeLiteral(l, e.pos)};
-
-            case EIdent("true"):
-                {bb: bb, expr: new TExpr(TLiteral(LBool(true)), tBool, e.pos)};
-
-            case EIdent("false"):
-                {bb: bb, expr: new TExpr(TLiteral(LBool(false)), tBool, e.pos)};
 
             case EIdent(ident):
                 {bb: bb, expr: resolveIdent(ident, e.pos)};
