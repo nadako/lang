@@ -493,6 +493,10 @@ class Typer {
                 // who needs empty blocks?
                 bb;
 
+            case EArrowFunction(_, _, _):
+                // block-level arrow functions don't make sense
+                bb;
+
             case EParens(e):
                 blockElement(bb, e);
 
@@ -587,9 +591,6 @@ class Typer {
                     r.bb.addElement(new TExpr(TReturn(r.expr), tVoid, e.pos));
                 }
                 bbUnreachable;
-
-            case EArrowFunction(_, _, _):
-                throw "todo " + e;
         }
     }
 

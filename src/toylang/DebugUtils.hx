@@ -146,8 +146,8 @@ class DebugUtils {
                     'return ${texprToString(e)}';
             case TFakeValue:
                 throw 'basic block element expressions cannot contain ' + e.kind.getName();
-            case TFunction(_, _):
-                return "fun" + e; // ???
+            case TFunction(args, ret, _):
+                return 'fun(${[for(arg in args) arg.name + ":" + typeToString(arg.type)].join(",")}):${typeToString(ret)}';
         }
     }
 }
