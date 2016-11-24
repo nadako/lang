@@ -38,7 +38,7 @@ class Web {
                 var r = [];
                 var typed = [];
                 for (decl in decls) {
-                    var typedDecl = typer.typeDecl(decl);
+                    var typedDecl = typer.typeSyntaxDecl(decl);
                     typed.push(typedDecl);
                     if (firstFun == null) {
                         switch (typedDecl) {
