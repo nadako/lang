@@ -31,6 +31,7 @@ enum TyperErrorMessage {
     CouldntInferReturnType;
     InsufficientTupleElements(remainingTypes:Array<Type>);
     TooManyTupleElements;
+    TypeNotFound(module:Array<String>, name:String);
     FieldNotFound(type:Type, name:String);
     Immutable;
     InvalidAssignment;
@@ -64,10 +65,16 @@ class Typer {
         localsStack = new GenericStack();
         thisStack = new GenericStack();
 
-        tVoid = typeType(TPath(new TypePath([], "Void")));
-        tString = typeType(TPath(new TypePath([], "String")));
-        tInt = typeType(TPath(new TypePath([], "Int")));
-        tBool = typeType(TPath(new TypePath([], "Bool")));
+        for (name in ["Void", "String", "Int", "Bool"]) {
+            var decl = new ClassDecl();
+            decl.fields = [];
+            typeClass(decl, name, Position.nullPos);
+        }
+
+        tVoid = typeType(TPath(new TypePath([], "Void")), Position.nullPos);
+        tString = typeType(TPath(new TypePath([], "String")), Position.nullPos);
+        tInt = typeType(TPath(new TypePath([], "Int")), Position.nullPos);
+        tBool = typeType(TPath(new TypePath([], "Bool")), Position.nullPos);
 
         var locals = pushLocals();
         locals["trace"] = new TVar("trace", TFun([new TFunctionArg("str", tString)], tVoid));
@@ -83,25 +90,25 @@ class Typer {
         }
     }
 
-    function typeType(t:Null<SyntaxType>):Type {
+    function typeType(t:Null<SyntaxType>, pos:Position):Type {
         if (t == null)
             return mkMono();
         return switch (t) {
             case TPath(path):
-                var decl = loadType(path.module, path.name);
+                var decl = loadType(path.module, path.name, pos);
                 switch (decl) {
                     case TDClass(cl): TInst(cl);
                     case TDFunction(_): throw false;
                 }
 
             case TTuple(types):
-                TTuple(types.map(typeType));
+                TTuple([for (t in types) typeType(t, pos)]);
 
             case TConst(t):
-                TConst(typeType(t));
+                TConst(typeType(t, pos));
 
             case TFunction(args, ret):
-                TFun([for (a in args) new TFunctionArg(a.name, typeType(a.type))], typeType(ret));
+                TFun([for (a in args) new TFunctionArg(a.name, typeType(a.type, pos))], typeType(ret, pos));
         }
     }
 
@@ -110,13 +117,13 @@ class Typer {
         decl.module = [];
         decl.name = fun.name;
         decl.pos = pos;
-        decl.ret = typeType(fun.ret);
+        decl.ret = typeType(fun.ret, pos);
         decl.args = [];
 
         if (fun.expr != null) {
             var locals = pushLocals();
             for (arg in fun.args) {
-                var type = typeType(arg.type);
+                var type = typeType(arg.type, pos);
                 decl.args.push(new TFunctionArg(arg.name, type));
                 locals[arg.name] = new TVar(arg.name, type);
             }
@@ -140,7 +147,7 @@ class Typer {
             }
         } else {
             for (arg in fun.args) {
-                var type = typeType(arg.type);
+                var type = typeType(arg.type, pos);
                 decl.args.push(new TFunctionArg(arg.name, type));
             }
         }
@@ -229,7 +236,7 @@ class Typer {
                 r;
 
             case ENew(path):
-                var tdecl = loadType(path.module, path.name);
+                var tdecl = loadType(path.module, path.name, e.pos);
                 var expr = switch (tdecl) {
                     case TDClass(cl): new TExpr(TNew(cl), TInst(cl), e.pos);
                     case TDFunction(_): throw false;
@@ -370,7 +377,7 @@ class Typer {
                 var locals = pushLocals();
                 var typedArgs = [];
                 for (arg in args) {
-                    var type = typeType(arg.type);
+                    var type = typeType(arg.type, e.pos);
                     typedArgs.push(new TFunctionArg(arg.name, type));
                     locals[arg.name] = new TVar(arg.name, type);
                 }
@@ -384,7 +391,7 @@ class Typer {
                 popLocals();
                 loopStack = oldLoopStack;
 
-                var ret = typeType(ret);
+                var ret = typeType(ret, e.pos);
 
                 {bb: bb, expr: new TExpr(TFunction(typedArgs, ret, bbRoot), TFun(typedArgs, ret), e.pos)};
         }
@@ -441,7 +448,7 @@ class Typer {
     function blockElement(bb:BasicBlock, e:Expr):BasicBlock {
         return switch (e.kind) {
             case EVar(bind, type, einitial):
-                var type = typeType(type);
+                var type = typeType(type, e.pos);
 
                 switch (bind) {
                     case VName(name):
@@ -615,7 +622,7 @@ class Typer {
         for (field in classDecl.fields) {
             switch (field.kind) {
                 case FVar(type, expr):
-                    var f = new TClassField(field.name, FVar, typeType(type), field.pos);
+                    var f = new TClassField(field.name, FVar, typeType(type, pos), field.pos);
                     // if (expr != null)
                     //     f.expr = typeExpr(expr);
                     fields.push(f);
@@ -750,19 +757,11 @@ class Typer {
 
     // hackity, like everything else
     var typeCache = new Map<String,TDecl>();
-    function loadType(module:Array<String>, name:String):TDecl {
+    function loadType(module:Array<String>, name:String, pos:Position):TDecl {
         var key = module.concat([name]).join(".");
         var type = typeCache[key];
-        if (type == null) {
-            type = typeCache[key] = TDClass({
-                var cl = new TClassDecl();
-                cl.module = module;
-                cl.name = name;
-                cl.pos = Position.nullPos;
-                cl.fields = [];
-                cl;
-            });
-        }
+        if (type == null)
+            throw new TyperError(TypeNotFound(module, name), pos);
         return type;
     }
 
