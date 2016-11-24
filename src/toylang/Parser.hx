@@ -21,9 +21,28 @@ enum ParserErrorMessage {
     MissingSemicolon;
 }
 
-class Parser extends hxparse.Parser<hxparse.LexerTokenSource<Token>, Token> implements hxparse.ParserBuilder {
-    public function new(input:byte.ByteData, file:String) {
-        super(new hxparse.LexerTokenSource(new Lexer(input, file), Lexer.rule));
+class ScannerTokenSource {
+    var scanner:Scanner;
+    var lastPos:hxparse.Position;
+
+    public function new(source, file) {
+        scanner = new Scanner(source, file);
+        lastPos = new hxparse.Position(source, 0, 0);
+    }
+
+    public function token() {
+        var tok;
+        do tok = scanner.scan() while (tok.kind == TkInvalid);
+        lastPos = new hxparse.Position(tok.pos.file, tok.pos.min, tok.pos.max);
+        return tok;
+    }
+
+    public function curPos() return lastPos;
+}
+
+class Parser extends hxparse.Parser<ScannerTokenSource, Token> implements hxparse.ParserBuilder {
+    public function new(input:String, file:String) {
+        super(new ScannerTokenSource(input, file));
     }
 
     public function parse():Array<Decl> {

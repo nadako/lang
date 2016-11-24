@@ -29,6 +29,7 @@ enum TokenKind {
     TkArrow;
     TkEquals;
     TkEqualsEquals;
+    TkBang;
     TkBangEquals;
     TkAmpAmp;
     TkPipePipe;
@@ -42,7 +43,7 @@ enum TokenKind {
     TkMinus;
     TkAsterisk;
     TkSlash;
-    TkBang;
+    TkInvalid;
 }
 
 enum Keyword {

@@ -304,7 +304,7 @@ class Printer {
             case LString(s):
                 var buf = new StringBuf();
                 buf.add("\"");
-                buf.add(Lexer.escapeString(s));
+                buf.add(Scanner.escapeString(s));
                 buf.add("\"");
                 buf.toString();
 

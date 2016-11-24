@@ -3,9 +3,10 @@ package toylang;
 class Main {
     static function main() {
         var file = "main.toy";
-        var input = byte.ByteData.ofBytes(sys.io.File.getBytes(file));
+        var source = sys.io.File.getContent(file);
+        var input = byte.ByteData.ofString(source);
 
-        var parser = new Parser(input, file);
+        var parser = new Parser(source, file);
         var decls =
             try {
                 parser.parse();

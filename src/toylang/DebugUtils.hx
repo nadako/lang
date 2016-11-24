@@ -80,7 +80,7 @@ class DebugUtils {
             case LBool(b):
                 if (b) "true" else "false";
             case LString(s):
-                '"${Lexer.escapeString(s)}"';
+                '"${Scanner.escapeString(s)}"';
         };
     }
 
