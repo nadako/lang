@@ -71,11 +71,18 @@ enum Literal {
     LBool(b:Bool);
 }
 
-class Decl {
+class SyntaxDecl {
+    public var module:Array<String>;
     public var name:String;
     public var pos:Position;
     public var kind:DeclKind;
-    public function new() {}
+
+    public function new(module, name, pos, kind) {
+        this.module = module;
+        this.name = name;
+        this.pos = pos;
+        this.kind = kind;
+    }
 }
 
 enum DeclKind {

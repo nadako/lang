@@ -74,7 +74,7 @@ class Typer {
         locals["monoFun"] = new TVar("monoFun", mkMono());
     }
 
-    public function typeDecl(decl:Decl):TDecl {
+    public function typeSyntaxDecl(decl:SyntaxDecl):TDecl {
         return switch (decl.kind) {
             case DFunction(fun):
                 TDFunction(typeFunctionDecl(fun, decl.pos));

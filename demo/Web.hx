@@ -32,7 +32,7 @@ class Web {
             var firstFun = null;
             var typer = new toylang.Typer();
             var success = try {
-                var parser = new toylang.Parser(model.getValue(), "code");
+                var parser = new toylang.Parser(model.getValue(), "code", ["code"]);
 
                 var decls = parser.parse();
                 var r = [];

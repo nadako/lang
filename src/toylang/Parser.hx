@@ -41,18 +41,21 @@ class ScannerTokenSource {
 }
 
 class Parser extends hxparse.Parser<ScannerTokenSource, Token> implements hxparse.ParserBuilder {
-    public function new(input:String, file:String) {
+    var module:Array<String>;
+
+    public function new(input, file, module) {
+        this.module = module;
         super(new ScannerTokenSource(input, file));
     }
 
-    public function parse():Array<Decl> {
+    public function parse():Array<SyntaxDecl> {
         return switch stream {
             case [decls = parseDecls([]), {kind: TkEof}]:
                 decls;
         }
     }
 
-    function parseDecls(acc:Array<Decl>):Array<Decl> {
+    function parseDecls(acc:Array<SyntaxDecl>):Array<SyntaxDecl> {
         return switch stream {
             case [decl = parseDecl(), acc = parseDecls({acc.push(decl); acc;})]:
                 acc;
@@ -61,26 +64,16 @@ class Parser extends hxparse.Parser<ScannerTokenSource, Token> implements hxpars
         }
     }
 
-    function parseDecl():Decl {
+    function parseDecl():SyntaxDecl {
         return switch stream {
             case [f = parseFunction()]:
-                var decl = new Decl();
-                decl.name = f.fun.name;
-                decl.pos = f.pos;
-                decl.kind = DFunction(f.fun);
-                decl;
+                return new SyntaxDecl(module, f.fun.name, f.pos, DFunction(f.fun));
 
             case [{kind: TkKeyword(KwdClass), pos: pmin}, {kind: TkIdent(name)}, params = parseTypeParams(), {kind: TkBraceOpen}, fields = parseRepeat(parseClassField), {kind: TkBraceClose}]:
-                var decl = new Decl();
-                decl.name = name;
-                decl.pos = Position.union(pmin, last.pos);
-                decl.kind = DClass({
-                    var cls = new ClassDecl();
-                    cls.fields = fields;
-                    cls.params = params;
-                    cls;
-                });
-                decl;
+                var classDecl = new ClassDecl();
+                classDecl.fields = fields;
+                classDecl.params = params;
+                new SyntaxDecl(module, name, Position.union(pmin, last.pos), DClass(classDecl));
         }
     }
 

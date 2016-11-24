@@ -14,7 +14,7 @@ class Printer {
         return StringTools.lpad("", indentString, level * indentString.length);
     }
 
-    public function printDecl(decl:Decl):String {
+    public function printSyntaxDecl(decl:SyntaxDecl):String {
         return switch (decl.kind) {
             case DFunction(fun):
                 printFunction(fun, 0);
@@ -23,7 +23,7 @@ class Printer {
         }
     }
 
-    public function printClass(decl:Decl, cls:ClassDecl, level:Int):String {
+    public function printClass(decl:SyntaxDecl, cls:ClassDecl, level:Int):String {
         var buf = new StringBuf();
         buf.add("class ");
         buf.add(decl.name);

@@ -6,7 +6,7 @@ class Main {
         var source = sys.io.File.getContent(file);
         var input = byte.ByteData.ofString(source);
 
-        var parser = new Parser(source, file);
+        var parser = new Parser(source, file, ["main"]);
         var decls =
             try {
                 parser.parse();
@@ -27,7 +27,7 @@ class Main {
         var typer = new Typer();
         var typedDecls =
             try {
-                decls.map(typer.typeDecl);
+                decls.map(typer.typeSyntaxDecl);
             } catch(e:toylang.Typer.TyperError) {
                 Sys.print(e.pos.format(input) + ": ");
                 switch (e.message) {
