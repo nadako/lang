@@ -32,8 +32,7 @@ class Web {
             var firstFun = null;
             var typer = new toylang.Typer();
             var success = try {
-                var input = byte.ByteData.ofString(model.getValue());
-                var parser = new toylang.Parser(input, "code");
+                var parser = new toylang.Parser(model.getValue(), "code");
 
                 var decls = parser.parse();
                 var r = [];
