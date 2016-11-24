@@ -146,6 +146,32 @@ class Scanner {
 
                 case "/".code:
                     pos++;
+                    switch (text.fastCodeAt(pos)) {
+                        case "/".code:
+                            pos++;
+                            while (pos < end) {
+                                var ch = text.fastCodeAt(pos);
+                                if (ch == "\n".code || ch == "\r".code)
+                                    break;
+                                pos++;
+                            }
+                            continue;
+                        case "*".code:
+                            pos++;
+                            var closed = false;
+                            while (pos < end) {
+                                if (text.fastCodeAt(pos) == "*".code && text.fastCodeAt(pos + 1) == "/".code) {
+                                    pos += 2;
+                                    closed = true;
+                                    break;
+                                }
+                                pos++;
+                            }
+                            if (!closed)
+                                reportError("Block comment not closed");
+                            continue;
+                        case _:
+                    }
                     return mk(TkSlash);
 
                 case ",".code:
