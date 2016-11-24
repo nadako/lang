@@ -1,7 +1,33 @@
 package toylang;
 
+import Sys.println;
+import sys.FileSystem;
+import sys.io.File;
+
 class Main {
+    static function loadModule(classPaths:Array<String>, name:String) {
+        for (cp in classPaths) {
+            var fullPath = cp + "/" + name + ".toy";
+            if (FileSystem.exists(fullPath)) {
+                var source = File.getContent(fullPath);
+                var parser = new Parser(source, fullPath, [name]);
+                var syntaxDecls = parser.parse();
+                println('Module $name ($fullPath)');
+                println('Declarations:');
+                var printer = new Printer("  ");
+                for (decl in syntaxDecls) {
+                    println(printer.printSyntaxDecl(decl));
+                }
+                return;
+            }
+        }
+        throw 'Module $name was not found in any of class paths (${classPaths.join(", ")})';
+    }
+
     static function main() {
+        // var cps = ["toys"];
+        // cps = cps.map(FileSystem.fullPath);
+        // loadModule(cps, "main");
         var file = "main.toy";
         var source = sys.io.File.getContent(file);
         var input = byte.ByteData.ofString(source);

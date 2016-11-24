@@ -1,0 +1,14 @@
+class Position {
+    var file:String;
+    var min:Int;
+    var max:Int;
+
+    function toString() {
+        return file;
+    }
+}
+
+function main() {
+    var p = new Position;
+    var s = p.toString();
+}
